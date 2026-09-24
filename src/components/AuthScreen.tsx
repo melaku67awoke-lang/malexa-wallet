@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 export default function AuthScreen() {
@@ -62,6 +63,7 @@ export default function AuthScreen() {
 
         <form onSubmit={handleSubmit}>
           <label htmlFor="email">Email</label>
+
           <input
             id="email"
             type="email"
@@ -73,6 +75,7 @@ export default function AuthScreen() {
           />
 
           <label htmlFor="password">Password</label>
+
           <input
             id="password"
             type="password"
