@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
+import "./App.css";
 
 function App() {
   const [status, setStatus] = useState("Checking connection...");
@@ -28,10 +29,19 @@ function App() {
   }, []);
 
   return (
-    <main>
-      <h1>Malexa Wallet</h1>
-      <p>{status}</p>
-    </main>
+    <div className="app">
+      <header className="app-header">
+        <h1>Malexa Wallet</h1>
+        <p>Secure digital wallet platform</p>
+      </header>
+
+      <main className="app-content">
+        <section className="status-card">
+          <h2>Welcome to Malexa Wallet</h2>
+          <p>{status}</p>
+        </section>
+      </main>
+    </div>
   );
 }
 
