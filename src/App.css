@@ -2,20 +2,20 @@
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  margin: 0;
+html {
   min-height: 100%;
-  width: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   background: #f8fafc;
-  color: #0f172a;
+  color: #111827;
 }
 
 button,
@@ -24,182 +24,209 @@ input {
 }
 
 button {
-  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* =========================
-   GENERAL APP
-   ========================= */
+#root {
+  min-height: 100vh;
+}
 
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* =========================
-   LANDING PAGE
+   HEADER
    ========================= */
 
-.landing-page {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top right, #dbeafe 0, transparent 35%),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-}
-
-.landing-header {
+.landing-header,
+.app-header {
   width: 100%;
+  min-height: 76px;
+  padding: 16px 6%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22px 6%;
-  background: rgba(255, 255, 255, 0.96);
+  gap: 24px;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
-.brand-logo {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 12px;
   background: #111827;
-  color: white;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.brand-name {
-  margin: 0;
+  color: #ffffff;
   font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.5px;
 }
 
-.brand-tagline {
-  margin: 2px 0 0;
-  color: #64748b;
+.brand h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #111827;
+}
+
+.brand span {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
   font-size: 12px;
 }
 
-.landing-nav {
+.header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.nav-button {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: white;
+.header-login,
+.header-signup,
+.header-signout {
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font-weight: 700;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+
+.header-login:hover,
+.header-signup:hover,
+.header-signout:hover,
+.primary-button:hover,
+.secondary-button:hover {
+  transform: translateY(-1px);
+}
+
+.header-login {
+  background: transparent;
   color: #111827;
-  font-weight: 600;
 }
 
-.nav-button:hover {
-  background: #f3f4f6;
-}
-
-.nav-button.primary {
-  border-color: #111827;
+.header-signup,
+.header-signout {
   background: #111827;
-  color: white;
-}
-
-.nav-button.primary:hover {
-  background: #1f2937;
+  color: #ffffff;
 }
 
 /* =========================
-   HERO
+   LANDING PAGE
    ========================= */
 
+.landing-main {
+  width: 100%;
+  flex: 1;
+}
+
 .hero-section {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 90px 6% 70px;
+  padding: 82px 6% 72px;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
   align-items: center;
-  gap: 60px;
+  gap: 70px;
 }
 
 .hero-content {
-  max-width: 650px;
+  min-width: 0;
 }
 
 .hero-badge {
-  display: inline-block;
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  margin-bottom: 20px;
   border-radius: 999px;
-  background: #e0f2fe;
-  color: #0369a1;
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 18px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
-.hero-title {
+.hero-content h2 {
   margin: 0;
-  font-size: clamp(42px, 6vw, 68px);
-  line-height: 1.02;
-  letter-spacing: -2.5px;
-  color: #0f172a;
+  max-width: 680px;
+  color: #111827;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+  font-weight: 850;
 }
 
-.hero-title span {
-  color: #2563eb;
+.hero-content h2 span {
+  color: #4f46e5;
 }
 
-.hero-description {
-  margin: 24px 0 0;
-  max-width: 600px;
-  color: #64748b;
+.hero-content > p {
+  max-width: 620px;
+  margin: 25px 0 0;
+  color: #6b7280;
   font-size: 18px;
   line-height: 1.7;
 }
 
 .hero-actions {
   display: flex;
-  gap: 14px;
-  margin-top: 32px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
 }
 
-.hero-button {
-  padding: 14px 24px;
-  border-radius: 12px;
-  border: 1px solid #111827;
-  font-weight: 700;
-  font-size: 15px;
+.primary-button,
+.secondary-button {
+  min-height: 48px;
+  padding: 13px 22px;
+  border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    background 0.15s ease;
 }
 
-.hero-button.primary {
+.primary-button {
   background: #111827;
-  color: white;
+  color: #ffffff;
 }
 
-.hero-button.primary:hover {
-  background: #1f2937;
-}
-
-.hero-button.secondary {
-  background: white;
+.secondary-button {
+  background: #ffffff;
   color: #111827;
+  border: 1px solid #d1d5db;
 }
 
-.hero-button.secondary:hover {
-  background: #f1f5f9;
+.primary-button:active,
+.secondary-button:active,
+.header-login:active,
+.header-signup:active,
+.header-signout:active {
+  transform: translateY(0);
 }
 
 /* =========================
@@ -207,73 +234,56 @@ button {
    ========================= */
 
 .wallet-preview {
+  width: 100%;
   display: flex;
   justify-content: center;
 }
 
 .wallet-card {
-  width: 100%;
-  max-width: 390px;
-  padding: 28px;
-  border-radius: 26px;
+  width: min(100%, 430px);
+  min-height: 270px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 24px;
   background: #111827;
-  color: white;
+  color: #ffffff;
   box-shadow: 0 25px 60px rgba(15, 23, 42, 0.22);
-  transform: rotate(2deg);
+}
+
+.wallet-card-top,
+.wallet-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .wallet-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.wallet-card-label {
-  margin: 0;
-  color: #cbd5e1;
-  font-size: 13px;
-}
-
-.wallet-card-title {
-  margin: 4px 0 0;
-  font-size: 20px;
+  font-size: 12px;
   font-weight: 800;
-}
-
-.wallet-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-}
-
-.wallet-balance {
-  margin-top: 55px;
+  letter-spacing: 0.14em;
 }
 
 .wallet-balance-label {
-  margin: 0 0 8px;
-  color: #94a3b8;
+  margin-top: 48px;
+  color: #cbd5e1;
   font-size: 13px;
 }
 
-.wallet-balance-value {
-  margin: 0;
-  font-size: 38px;
+.wallet-balance {
+  margin-top: 6px;
+  font-size: clamp(36px, 6vw, 52px);
+  line-height: 1;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -0.04em;
 }
 
 .wallet-card-bottom {
-  margin-top: 50px;
-  display: flex;
-  justify-content: space-between;
+  margin-top: 42px;
   color: #cbd5e1;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* =========================
@@ -281,101 +291,70 @@ button {
    ========================= */
 
 .features-section {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 70px 6%;
-}
-
-.section-heading {
-  text-align: center;
-  max-width: 650px;
-  margin: 0 auto 42px;
-}
-
-.section-heading h2 {
-  margin: 0;
-  font-size: 34px;
-  letter-spacing: -1px;
-}
-
-.section-heading p {
-  margin: 14px 0 0;
-  color: #64748b;
-  line-height: 1.6;
-}
-
-.features-grid {
+  padding: 20px 6% 80px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 22px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
 }
 
 .feature-card {
   padding: 28px;
-  border-radius: 18px;
-  background: white;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+  border-radius: 16px;
+  background: #ffffff;
 }
 
 .feature-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: #eff6ff;
-  color: #2563eb;
+  width: 46px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 21px;
-  font-weight: 800;
   margin-bottom: 18px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  font-size: 22px;
 }
 
 .feature-card h3 {
   margin: 0;
+  color: #111827;
   font-size: 19px;
 }
 
 .feature-card p {
   margin: 10px 0 0;
-  color: #64748b;
-  line-height: 1.6;
+  color: #6b7280;
+  line-height: 1.65;
 }
 
 /* =========================
    CTA
    ========================= */
 
-.cta-section {
-  max-width: 1100px;
-  margin: 50px auto 70px;
-  padding: 55px 6%;
-  border-radius: 24px;
-  background: #111827;
-  color: white;
+.landing-cta {
+  width: min(100% - 12%, 1080px);
+  margin: 0 auto 70px;
+  padding: 58px 30px;
   text-align: center;
+  border-radius: 22px;
+  background: #eef2ff;
 }
 
-.cta-section h2 {
+.landing-cta h2 {
   margin: 0;
-  font-size: 34px;
-}
-
-.cta-section p {
-  max-width: 600px;
-  margin: 14px auto 26px;
-  color: #cbd5e1;
-  line-height: 1.6;
-}
-
-.cta-button {
-  padding: 14px 25px;
-  border: 0;
-  border-radius: 12px;
-  background: white;
   color: #111827;
-  font-weight: 800;
+  font-size: clamp(28px, 4vw, 40px);
+}
+
+.landing-cta p {
+  margin: 12px auto 24px;
+  max-width: 560px;
+  color: #6b7280;
+  line-height: 1.6;
 }
 
 /* =========================
@@ -383,82 +362,112 @@ button {
    ========================= */
 
 .landing-footer {
-  padding: 30px 6%;
-  text-align: center;
-  border-top: 1px solid #e5e7eb;
-  color: #64748b;
-  font-size: 14px;
-}
-
-/* =========================
-   AUTH SCREEN
-   ========================= */
-
-.auth-screen {
-  min-height: calc(100vh - 90px);
+  min-height: 80px;
+  padding: 22px 6%;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.landing-footer strong {
+  color: #111827;
+}
+
+/* =========================
+   AUTH PAGE
+   ========================= */
+
+.app-content {
   width: 100%;
-  padding: 40px 20px;
-  background:
-    radial-gradient(circle at top left, #dbeafe 0, transparent 30%),
-    #f8fafc;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 6%;
+}
+
+.back-button {
+  margin-bottom: 22px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auth-screen {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
   padding: 32px;
-  background: white;
-  border-radius: 20px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
 }
 
 .auth-card h2 {
-  margin-top: 0;
-  margin-bottom: 8px;
+  margin: 0;
+  color: #111827;
+  font-size: 28px;
 }
 
 .auth-card > p {
-  margin-top: 0;
-  margin-bottom: 24px;
-  color: #64748b;
+  margin: 9px 0 26px;
+  color: #6b7280;
+  line-height: 1.5;
 }
 
 .auth-card form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
 .auth-card label {
-  font-weight: 600;
-  color: #334155;
+  margin-top: 8px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .auth-card input {
   width: 100%;
-  padding: 13px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
   outline: none;
+  background: #ffffff;
+  color: #111827;
 }
 
 .auth-card input:focus {
-  border-color: #2563eb;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .auth-card form button {
-  margin-top: 10px;
-  padding: 13px;
+  min-height: 47px;
+  margin-top: 14px;
+  padding: 12px;
   border: 0;
-  border-radius: 10px;
-  cursor: pointer;
+  border-radius: 9px;
   background: #111827;
-  color: white;
-  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
 }
 
 .auth-card form button:disabled {
@@ -469,103 +478,142 @@ button {
 .auth-message {
   margin-top: 16px;
   padding: 12px;
-  border-radius: 10px;
-  background: #f1f5f9;
+  border-radius: 9px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .auth-switch {
   width: 100%;
-  margin-top: 16px;
-  padding: 10px;
+  margin-top: 18px;
+  padding: 8px;
   border: 0;
   background: transparent;
+  color: #4f46e5;
   cursor: pointer;
-  color: #2563eb;
-  text-decoration: underline;
+  font-weight: 700;
 }
 
 /* =========================
-   DASHBOARD
+   SIGNED-IN DASHBOARD PLACEHOLDER
    ========================= */
 
-.app-header {
-  padding: 24px;
-  background: #111827;
-  color: white;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 28px;
-}
-
-.app-header p {
-  margin: 8px 0 0;
-  opacity: 0.8;
-}
-
-.app-content {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 32px 20px;
-}
-
-.status-card {
-  padding: 24px;
-  border-radius: 16px;
-  background: white;
+.status-card,
+.dashboard-card {
+  width: 100%;
+  max-width: 720px;
+  margin: 30px auto;
+  padding: 32px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
-.status-card h2 {
+.status-card h2,
+.dashboard-card h2 {
   margin-top: 0;
+  color: #111827;
 }
 
 .status-card p {
-  margin-bottom: 12px;
+  color: #6b7280;
+  line-height: 1.6;
 }
 
 .status-card button {
   margin-top: 12px;
-  padding: 10px 18px;
+  padding: 11px 18px;
   border: 0;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 9px;
   background: #111827;
-  color: white;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.dashboard-card {
+  text-align: left;
+}
+
+.welcome-badge {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.dashboard-card h2 {
+  margin: 18px 0 8px;
+  font-size: 30px;
+}
+
+.dashboard-intro,
+.dashboard-note {
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.account-info {
+  margin: 26px 0;
+  display: grid;
+  gap: 12px;
+}
+
+.account-info > div {
+  padding: 16px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.account-info span {
+  display: block;
+  margin-bottom: 5px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.account-info strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #111827;
+}
+
+.header-signout {
+  flex-shrink: 0;
 }
 
 /* =========================
    MOBILE
    ========================= */
 
-@media (max-width: 800px) {
-  .landing-header {
-    padding: 18px 5%;
-  }
-
-  .landing-nav {
-    gap: 7px;
-  }
-
-  .nav-button {
-    padding: 9px 12px;
-    font-size: 13px;
+@media (max-width: 850px) {
+  .landing-header,
+  .app-header {
+    padding: 14px 5%;
   }
 
   .hero-section {
     grid-template-columns: 1fr;
-    padding: 60px 5%;
     gap: 45px;
-    text-align: center;
+    padding-top: 60px;
   }
 
   .hero-content {
-    margin: 0 auto;
+    text-align: center;
   }
 
-  .hero-description {
+  .hero-badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content > p {
     margin-left: auto;
     margin-right: auto;
   }
@@ -574,60 +622,148 @@ button {
     justify-content: center;
   }
 
-  .wallet-card {
-    transform: none;
-  }
-
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-
   .features-section {
-    padding: 55px 5%;
+    grid-template-columns: 1fr;
+    padding-bottom: 60px;
   }
 
-  .cta-section {
-    margin-left: 5%;
-    margin-right: 5%;
+  .wallet-preview {
+    padding: 0 4%;
   }
 }
 
-@media (max-width: 520px) {
-  .brand-tagline {
-    display: none;
+@media (max-width: 600px) {
+  .landing-header,
+  .app-header {
+    min-height: auto;
+    padding: 14px 18px;
   }
 
-  .brand-name {
-    font-size: 18px;
+  .landing-header {
+    align-items: flex-start;
   }
 
-  .brand-logo {
-    width: 40px;
-    height: 40px;
+  .landing-header .brand h1,
+  .app-header .brand h1 {
+    font-size: 17px;
   }
 
-  .landing-nav .nav-button {
-    padding: 8px 10px;
+  .brand-mark {
+    width: 39px;
+    height: 39px;
+    flex-basis: 39px;
+    border-radius: 10px;
+    font-size: 19px;
+  }
+
+  .brand span {
+    font-size: 11px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
+  .header-login,
+  .header-signup,
+  .header-signout {
+    padding: 9px 10px;
     font-size: 12px;
   }
 
-  .hero-title {
-    font-size: 42px;
+  .hero-section {
+    padding: 48px 18px 55px;
+    gap: 36px;
   }
 
-  .hero-description {
+  .hero-content h2 {
+    font-size: clamp(38px, 12vw, 54px);
+  }
+
+  .hero-content > p {
     font-size: 16px;
   }
 
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+
+  .wallet-preview {
+    padding: 0;
+  }
+
   .wallet-card {
+    min-height: 235px;
     padding: 24px;
+    border-radius: 19px;
   }
 
-  .wallet-balance-value {
-    font-size: 32px;
+  .wallet-balance {
+    font-size: 40px;
   }
 
-  .cta-section h2 {
-    font-size: 28px;
+  .features-section {
+    padding: 0 18px 55px;
+  }
+
+  .feature-card {
+    padding: 23px;
+  }
+
+  .landing-cta {
+    width: calc(100% - 36px);
+    margin-bottom: 50px;
+    padding: 42px 20px;
+  }
+
+  .landing-footer {
+    padding: 20px 18px;
+    text-align: center;
+  }
+
+  .app-content {
+    padding: 28px 18px;
+  }
+
+  .auth-card,
+  .status-card,
+  .dashboard-card {
+    padding: 24px 20px;
+    border-radius: 15px;
+  }
+
+  .dashboard-card h2 {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 400px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-login,
+  .header-signup,
+  .header-signout {
+    width: 100%;
+  }
+
+  .landing-header {
+    align-items: center;
+  }
+
+  .landing-header .brand {
+    flex: 1;
+  }
+
+  .hero-content h2 {
+    font-size: 36px;
   }
 }
