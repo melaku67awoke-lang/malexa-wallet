@@ -1,10 +1,492 @@
-#root {
-  min-height: 100vh;
+* {
+  box-sizing: border-box;
 }
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* =========================
+   GENERAL APP
+   ========================= */
 
 .app {
   min-height: 100vh;
 }
+
+/* =========================
+   LANDING PAGE
+   ========================= */
+
+.landing-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, #dbeafe 0, transparent 35%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.landing-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 6%;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111827;
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.brand-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.brand-tagline {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #111827;
+  font-weight: 600;
+}
+
+.nav-button:hover {
+  background: #f3f4f6;
+}
+
+.nav-button.primary {
+  border-color: #111827;
+  background: #111827;
+  color: white;
+}
+
+.nav-button.primary:hover {
+  background: #1f2937;
+}
+
+/* =========================
+   HERO
+   ========================= */
+
+.hero-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 90px 6% 70px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 60px;
+}
+
+.hero-content {
+  max-width: 650px;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 68px);
+  line-height: 1.02;
+  letter-spacing: -2.5px;
+  color: #0f172a;
+}
+
+.hero-title span {
+  color: #2563eb;
+}
+
+.hero-description {
+  margin: 24px 0 0;
+  max-width: 600px;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.hero-button {
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: 1px solid #111827;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.hero-button.primary {
+  background: #111827;
+  color: white;
+}
+
+.hero-button.primary:hover {
+  background: #1f2937;
+}
+
+.hero-button.secondary {
+  background: white;
+  color: #111827;
+}
+
+.hero-button.secondary:hover {
+  background: #f1f5f9;
+}
+
+/* =========================
+   WALLET PREVIEW
+   ========================= */
+
+.wallet-preview {
+  display: flex;
+  justify-content: center;
+}
+
+.wallet-card {
+  width: 100%;
+  max-width: 390px;
+  padding: 28px;
+  border-radius: 26px;
+  background: #111827;
+  color: white;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.22);
+  transform: rotate(2deg);
+}
+
+.wallet-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wallet-card-label {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.wallet-card-title {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.wallet-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.wallet-balance {
+  margin-top: 55px;
+}
+
+.wallet-balance-label {
+  margin: 0 0 8px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.wallet-balance-value {
+  margin: 0;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.wallet-card-bottom {
+  margin-top: 50px;
+  display: flex;
+  justify-content: space-between;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+/* =========================
+   FEATURES
+   ========================= */
+
+.features-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 70px 6%;
+}
+
+.section-heading {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 42px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: -1px;
+}
+
+.section-heading p {
+  margin: 14px 0 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.feature-card {
+  padding: 28px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.feature-card h3 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.feature-card p {
+  margin: 10px 0 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* =========================
+   CTA
+   ========================= */
+
+.cta-section {
+  max-width: 1100px;
+  margin: 50px auto 70px;
+  padding: 55px 6%;
+  border-radius: 24px;
+  background: #111827;
+  color: white;
+  text-align: center;
+}
+
+.cta-section h2 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.cta-section p {
+  max-width: 600px;
+  margin: 14px auto 26px;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.cta-button {
+  padding: 14px 25px;
+  border: 0;
+  border-radius: 12px;
+  background: white;
+  color: #111827;
+  font-weight: 800;
+}
+
+/* =========================
+   FOOTER
+   ========================= */
+
+.landing-footer {
+  padding: 30px 6%;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* =========================
+   AUTH SCREEN
+   ========================= */
+
+.auth-screen {
+  min-height: calc(100vh - 90px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 40px 20px;
+  background:
+    radial-gradient(circle at top left, #dbeafe 0, transparent 30%),
+    #f8fafc;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.1);
+}
+
+.auth-card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.auth-card > p {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: #64748b;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-card label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+}
+
+.auth-card input:focus {
+  border-color: #2563eb;
+}
+
+.auth-card form button {
+  margin-top: 10px;
+  padding: 13px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #111827;
+  color: white;
+  font-weight: 700;
+}
+
+.auth-card form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.auth-message {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.auth-switch {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* =========================
+   DASHBOARD
+   ========================= */
 
 .app-header {
   padding: 24px;
@@ -30,9 +512,10 @@
 
 .status-card {
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   background: white;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
 }
 
 .status-card h2 {
@@ -49,84 +532,102 @@
   border: 0;
   border-radius: 8px;
   cursor: pointer;
-}
-
-.auth-screen {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 440px;
-  padding: 28px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.auth-card h2 {
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.auth-card > p {
-  margin-top: 0;
-  margin-bottom: 24px;
-}
-
-.auth-card form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.auth-card label {
-  font-weight: 600;
-}
-
-.auth-card input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  outline: none;
-}
-
-.auth-card input:focus {
-  border-color: #6b7280;
-}
-
-.auth-card form button {
-  margin-top: 10px;
-  padding: 12px;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
   background: #111827;
   color: white;
-  font-weight: 600;
 }
 
-.auth-card form button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 800px) {
+  .landing-header {
+    padding: 18px 5%;
+  }
+
+  .landing-nav {
+    gap: 7px;
+  }
+
+  .nav-button {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+
+  .hero-section {
+    grid-template-columns: 1fr;
+    padding: 60px 5%;
+    gap: 45px;
+    text-align: center;
+  }
+
+  .hero-content {
+    margin: 0 auto;
+  }
+
+  .hero-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .wallet-card {
+    transform: none;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features-section {
+    padding: 55px 5%;
+  }
+
+  .cta-section {
+    margin-left: 5%;
+    margin-right: 5%;
+  }
 }
 
-.auth-message {
-  margin-top: 16px;
-  padding: 12px;
-  border-radius: 8px;
-  background: #f3f4f6;
-}
+@media (max-width: 520px) {
+  .brand-tagline {
+    display: none;
+  }
 
-.auth-switch {
-  width: 100%;
-  margin-top: 16px;
-  padding: 10px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  text-decoration: underline;
+  .brand-name {
+    font-size: 18px;
+  }
+
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .landing-nav .nav-button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .hero-title {
+    font-size: 42px;
+  }
+
+  .hero-description {
+    font-size: 16px;
+  }
+
+  .wallet-card {
+    padding: 24px;
+  }
+
+  .wallet-balance-value {
+    font-size: 32px;
+  }
+
+  .cta-section h2 {
+    font-size: 28px;
+  }
 }
