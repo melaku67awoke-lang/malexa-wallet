@@ -6,10 +6,52 @@ import "./App.css";
 
 type AuthMode = "login" | "signup";
 
+type Page =
+  | "dashboard"
+  | "p2p"
+  | "orders"
+  | "settings"
+  | "help";
+
+type P2PTab = "buy" | "sell";
+
+type OrderTab = "active" | "completed" | "cancelled";
+
+const navigation: Array<{
+  id: Page;
+  label: string;
+  icon: string;
+}> = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "⌂",
+  },
+  {
+    id: "p2p",
+    label: "P2P",
+    icon: "⇄",
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    icon: "▤",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: "⚙",
+  },
+  {
+    id: "help",
+    label: "Help",
+    icon: "?",
+  },
+];
+
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
 
   useEffect(() => {
@@ -18,29 +60,22 @@ function App() {
     const loadSession = async () => {
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
 
-      if (!mounted) {
-        return;
-      }
-
-      if (error) {
-        console.error("Failed to load session:", error);
-        setSession(null);
-      } else {
+      if (mounted) {
         setSession(session);
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    void loadSession();
+    loadSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (mounted) {
+        setSession(nextSession);
+      }
     });
 
     return () => {
@@ -49,257 +84,224 @@ function App() {
     };
   }, []);
 
-  const openAuth = (mode: AuthMode) => {
-    setAuthMode(mode);
-    setShowAuth(true);
-  };
-
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      console.error("Sign out failed:", error);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="app">
-        <header className="app-header">
-          <div className="brand">
-            <div className="brand-mark">M</div>
-            <div>
-              <h1>Malexa Wallet</h1>
-              <span>Secure digital wallet</span>
-            </div>
-          </div>
-        </header>
-
-        <main className="app-content">
-          <section className="status-card">
-            <h2>Loading...</h2>
-            <p>Checking your account session.</p>
-          </section>
-        </main>
+      <div className="app-loading">
+        <div className="loading-card">
+          <div className="brand-mark">M</div>
+          <h1>Malexa Wallet</h1>
+          <p>Loading your account...</p>
+        </div>
       </div>
     );
   }
 
-  if (session) {
+  if (!session) {
     return (
-      <div className="app">
-        <header className="app-header">
-          <div className="brand">
-            <div className="brand-mark">M</div>
-            <div>
-              <h1>Malexa Wallet</h1>
-              <span>Secure digital wallet</span>
-            </div>
-          </div>
+      <div className="app-shell">
+        <LandingPage
+          onLogin={() => setAuthMode("login")}
+          onSignup={() => setAuthMode("signup")}
+        />
 
-          <button
-            type="button"
-            className="header-signout"
-            onClick={handleSignOut}
-          >
-            Sign Out
-          </button>
-        </header>
-
-        <main className="app-content">
-          <section className="dashboard-card">
-            <div className="welcome-badge">ACCOUNT ACTIVE</div>
-
-            <h2>Welcome to Malexa Wallet</h2>
-
-            <p className="dashboard-intro">
-              Your wallet account is securely signed in.
-            </p>
-
-            <div className="account-info">
-              <div>
-                <span>Email</span>
-                <strong>{session.user.email ?? "Not available"}</strong>
-              </div>
-
-              <div>
-                <span>Account ID</span>
-                <strong>{session.user.id}</strong>
-              </div>
-            </div>
-
-            <p className="dashboard-note">
-              Your wallet dashboard and account features will appear here as
-              we continue building the platform.
-            </p>
-          </section>
-        </main>
+        <div className="auth-overlay">
+          <AuthScreen
+            initialMode={authMode}
+            onAuthenticated={(nextSession) => {
+              setSession(nextSession);
+            }}
+          />
+        </div>
       </div>
     );
   }
 
-  if (showAuth) {
-    return (
-      <div className="app">
-        <header className="app-header">
-          <div className="brand">
-            <div className="brand-mark">M</div>
-            <div>
-              <h1>Malexa Wallet</h1>
-              <span>Secure digital wallet</span>
-            </div>
-          </div>
-        </header>
+  return <SignedInApp session={session} />;
+}
 
-        <main className="app-content">
-          <button
-            type="button"
-            className="back-button"
-            onClick={() => setShowAuth(false)}
-          >
-            ← Back to Home
-          </button>
+function SignedInApp({ session }: { session: Session }) {
+  const [page, setPage] = useState<Page>("dashboard");
 
-          <AuthScreen initialMode={authMode} />
-        </main>
-      </div>
-    );
-  }
+  const email = session.user.email ?? "Account";
+
+  const navigate = (nextPage: Page) => {
+    setPage(nextPage);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   return (
-    <div className="app">
-      <header className="landing-header">
-        <div className="brand">
-          <div className="brand-mark">M</div>
-          <div>
-            <h1>Malexa Wallet</h1>
-            <span>Secure digital wallet</span>
+    <div className="wallet-app">
+      <header className="wallet-header">
+        <div className="wallet-header-inner">
+          <button
+            type="button"
+            className="wallet-brand-button"
+            onClick={() => navigate("dashboard")}
+            aria-label="Go to Dashboard"
+          >
+            <Brand />
+          </button>
+
+          <div className="header-account">
+            <div className="header-user">
+              <span className="header-user-label">Signed in as</span>
+              <strong>{email}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="sign-out-button"
+              onClick={async () => {
+                await supabase.auth.signOut();
+              }}
+            >
+              Sign Out
+            </button>
           </div>
-        </div>
-
-        <div className="header-actions">
-          <button
-            type="button"
-            className="header-login"
-            onClick={() => openAuth("login")}
-          >
-            Sign In
-          </button>
-
-          <button
-            type="button"
-            className="header-signup"
-            onClick={() => openAuth("signup")}
-          >
-            Create Account
-          </button>
         </div>
       </header>
 
-      <main className="landing-main">
-        <section className="hero-section">
-          <div className="hero-content">
-            <div className="hero-badge">WELCOME TO MALEXA WALLET</div>
+      <main className="wallet-main">
+        {page === "dashboard" && (
+          <DashboardPage onNavigate={navigate} />
+        )}
 
-            <h2>
-              Your money.
-              <br />
-              <span>Your wallet.</span>
-              <br />
-              Your control.
-            </h2>
+        {page === "p2p" && <P2PPage />}
 
-            <p>
-              A modern digital wallet designed to give you a simple,
-              convenient, and secure way to manage your digital assets.
-            </p>
+        {page === "orders" && <OrdersPage />}
 
-            <div className="hero-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => openAuth("signup")}
-              >
-                Create Your Account
-              </button>
+        {page === "settings" && <SettingsPage />}
 
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => openAuth("login")}
-              >
-                Sign In
-              </button>
-            </div>
-          </div>
-
-          <div className="wallet-preview">
-            <div className="wallet-card">
-              <div className="wallet-card-top">
-                <span>MALEXA WALLET</span>
-                <span>◈</span>
-              </div>
-
-              <div className="wallet-balance-label">Available Balance</div>
-
-              <div className="wallet-balance">$0.00</div>
-
-              <div className="wallet-card-bottom">
-                <span>Secure Wallet</span>
-                <span>••••</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="features-section">
-          <div className="feature-card">
-            <div className="feature-icon">🔐</div>
-            <h3>Secure</h3>
-            <p>
-              Your account is protected with secure authentication and
-              controlled access.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">💳</div>
-            <h3>Digital Wallet</h3>
-            <p>
-              Manage your wallet account and digital assets from one place.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">⚡</div>
-            <h3>Simple</h3>
-            <p>
-              A clean experience designed to make wallet management easier.
-            </p>
-          </div>
-        </section>
-
-        <section className="landing-cta">
-          <h2>Ready to get started?</h2>
-
-          <p>Create your Malexa Wallet account and begin your journey.</p>
-
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => openAuth("signup")}
-          >
-            Create Account
-          </button>
-        </section>
+        {page === "help" && <HelpPage />}
       </main>
 
-      <footer className="landing-footer">
-        <strong>Malexa Wallet</strong>
-        <span>Secure digital wallet platform</span>
-      </footer>
+      <BottomNavigation
+        activePage={page}
+        onNavigate={navigate}
+      />
     </div>
   );
 }
 
-export default App;
+function DashboardPage({
+  onNavigate,
+}: {
+  onNavigate: (page: Page) => void;
+}) {
+  return (
+    <div className="page-container">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">Your account</span>
+          <h1>Dashboard</h1>
+          <p>
+            Manage your balance, P2P activity, orders, and account
+            settings.
+          </p>
+        </div>
+
+        <div className="account-status">
+          <span className="status-dot" />
+          Account Active
+        </div>
+      </div>
+
+      <section className="balance-card">
+        <div className="balance-card-top">
+          <div>
+            <span className="balance-label">Total Balance</span>
+            <div className="balance-value">$0.00</div>
+          </div>
+
+          <div className="balance-symbol">M</div>
+        </div>
+
+        <div className="balance-divider" />
+
+        <div className="balance-details">
+          <div>
+            <span>Available Balance</span>
+            <strong>$0.00</strong>
+          </div>
+
+          <div>
+            <span>Locked Balance</span>
+            <strong>$0.00</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <h2>Quick Actions</h2>
+            <p>Common account actions</p>
+          </div>
+        </div>
+
+        <div className="quick-actions">
+          <button type="button" className="quick-action">
+            <span className="quick-action-icon">↓</span>
+            <span>
+              <strong>Deposit</strong>
+              <small>Add funds to your account</small>
+            </span>
+          </button>
+
+          <button type="button" className="quick-action">
+            <span className="quick-action-icon">↑</span>
+            <span>
+              <strong>Withdraw</strong>
+              <small>Withdraw available funds</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="quick-action"
+            onClick={() => onNavigate("p2p")}
+          >
+            <span className="quick-action-icon">⇄</span>
+            <span>
+              <strong>P2P Trading</strong>
+              <small>Buy and sell through P2P</small>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <h2>Account</h2>
+            <p>Manage the important parts of your wallet</p>
+          </div>
+        </div>
+
+        <div className="dashboard-grid">
+          <button
+            type="button"
+            className="dashboard-tile"
+            onClick={() => onNavigate("p2p")}
+          >
+            <span className="tile-icon">⇄</span>
+            <span className="tile-content">
+              <strong>P2P Trading</strong>
+              <small>Buy and sell assets with other users.</small>
+            </span>
+            <span className="tile-arrow">›</span>
+          </button>
+
+          <button
+            type="button"
+            className="dashboard-tile"
+            onClick={() => onNavigate("orders")}
+          >
+            <span className="tile-icon">▤</span>
+            <span className="tile-content">
+              <strong>Orders</strong>
+              <small>View active, completed, and cancelled orders.</small>
+            </
