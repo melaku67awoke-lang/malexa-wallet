@@ -1,13 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-export default function AuthScreen() {
+type AuthMode = "login" | "signup";
+
+interface AuthScreenProps {
+  initialMode?: AuthMode;
+}
+
+export default function AuthScreen({
+  initialMode = "login",
+}: AuthScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMode(initialMode);
+    setMessage("");
+  }, [initialMode]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,6 +61,13 @@ export default function AuthScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setMode((currentMode) =>
+      currentMode === "login" ? "signup" : "login"
+    );
+    setMessage("");
   };
 
   return (
@@ -107,10 +127,7 @@ export default function AuthScreen() {
         <button
           type="button"
           className="auth-switch"
-          onClick={() => {
-            setMode(mode === "login" ? "signup" : "login");
-            setMessage("");
-          }}
+          onClick={switchMode}
         >
           {mode === "login"
             ? "Need an account? Create one"
