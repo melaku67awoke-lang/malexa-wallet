@@ -27,6 +27,6 @@ jobs:
       - name: Build webapp
         run: npm run build
         env:
-          VITE_SUPABASE_URL: https://example.supabase.co
-          VITE_SUPABASE_PUBLISHABLE_KEY: example-publishable-key
-          VITE_MALEXA_API_URL: https://example.com
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_MALEXA_API_URL: ${{ secrets.VITE_MALEXA_API_URL }}
