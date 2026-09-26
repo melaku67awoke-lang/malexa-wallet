@@ -40,6 +40,18 @@ type Order = {
   status: OrderTab;
 };
 
+type DepositAddressResponse = {
+  success?: boolean;
+  existing?: boolean;
+  address?: string;
+  network?: string;
+  asset?: string;
+  asset_id?: string;
+  address_required?: boolean;
+  message?: string;
+  error?: string;
+};
+
 const navigation: Array<{
   id: Page;
   label: string;
@@ -177,10 +189,7 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   const createAdvertisement = (ad: Advertisement) => {
-    setAdvertisements((current) => [
-      ad,
-      ...current,
-    ]);
+    setAdvertisements((current) => [ad, ...current]);
   };
 
   const createOrder = (
@@ -198,9 +207,7 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    const total = (
-      numericAmount * numericPrice
-    ).toFixed(2);
+    const total = (numericAmount * numericPrice).toFixed(2);
 
     const newOrder: Order = {
       id: Date.now(),
@@ -214,10 +221,7 @@ function SignedInApp({ session }: { session: Session }) {
       status: "active",
     };
 
-    setOrders((current) => [
-      newOrder,
-      ...current,
-    ]);
+    setOrders((current) => [newOrder, ...current]);
 
     navigate("orders");
   };
@@ -274,20 +278,14 @@ function SignedInApp({ session }: { session: Session }) {
           <DashboardPage onNavigate={navigate} />
         )}
 
-        {page === "deposit" && (
-          <DepositPage />
-        )}
+        {page === "deposit" && <DepositPage />}
 
-        {page === "withdraw" && (
-          <WithdrawPage />
-        )}
+        {page === "withdraw" && <WithdrawPage />}
 
         {page === "p2p" && (
           <P2PPage
             advertisements={advertisements}
-            onCreateAdvertisement={
-              createAdvertisement
-            }
+            onCreateAdvertisement={createAdvertisement}
             onCreateOrder={createOrder}
           />
         )}
@@ -299,13 +297,9 @@ function SignedInApp({ session }: { session: Session }) {
           />
         )}
 
-        {page === "settings" && (
-          <SettingsPage />
-        )}
+        {page === "settings" && <SettingsPage />}
 
-        {page === "help" && (
-          <HelpPage />
-        )}
+        {page === "help" && <HelpPage />}
       </main>
 
       <BottomNavigation
@@ -325,13 +319,11 @@ function DashboardPage({
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            Your account
-          </span>
+          <span className="eyebrow">Your account</span>
           <h1>Dashboard</h1>
           <p>
-            Manage your balance, P2P activity,
-            orders, and account settings.
+            Manage your balance, P2P activity, orders,
+            and account settings.
           </p>
         </div>
 
@@ -347,14 +339,10 @@ function DashboardPage({
             <span className="balance-label">
               Total Balance
             </span>
-            <div className="balance-value">
-              $0.00
-            </div>
+            <div className="balance-value">$0.00</div>
           </div>
 
-          <div className="balance-symbol">
-            M
-          </div>
+          <div className="balance-symbol">M</div>
         </div>
 
         <div className="balance-divider" />
@@ -376,9 +364,7 @@ function DashboardPage({
         <div className="section-heading">
           <div>
             <h2>Quick Actions</h2>
-            <p>
-              Common wallet actions
-            </p>
+            <p>Common wallet actions</p>
           </div>
         </div>
 
@@ -386,57 +372,39 @@ function DashboardPage({
           <button
             type="button"
             className="quick-action"
-            onClick={() =>
-              onNavigate("deposit")
-            }
+            onClick={() => onNavigate("deposit")}
           >
-            <span className="quick-action-icon">
-              ↓
-            </span>
+            <span className="quick-action-icon">↓</span>
 
             <span>
               <strong>Deposit</strong>
-              <small>
-                Add funds to your account
-              </small>
+              <small>Add funds to your account</small>
             </span>
           </button>
 
           <button
             type="button"
             className="quick-action"
-            onClick={() =>
-              onNavigate("withdraw")
-            }
+            onClick={() => onNavigate("withdraw")}
           >
-            <span className="quick-action-icon">
-              ↑
-            </span>
+            <span className="quick-action-icon">↑</span>
 
             <span>
               <strong>Withdraw</strong>
-              <small>
-                Withdraw available funds
-              </small>
+              <small>Withdraw available funds</small>
             </span>
           </button>
 
           <button
             type="button"
             className="quick-action"
-            onClick={() =>
-              onNavigate("p2p")
-            }
+            onClick={() => onNavigate("p2p")}
           >
-            <span className="quick-action-icon">
-              ⇄
-            </span>
+            <span className="quick-action-icon">⇄</span>
 
             <span>
               <strong>P2P Trading</strong>
-              <small>
-                Buy and sell through P2P
-              </small>
+              <small>Buy and sell through P2P</small>
             </span>
           </button>
         </div>
@@ -446,10 +414,7 @@ function DashboardPage({
         <div className="section-heading">
           <div>
             <h2>Account</h2>
-            <p>
-              Manage the important parts of
-              your wallet
-            </p>
+            <p>Manage the important parts of your wallet</p>
           </div>
         </div>
 
@@ -457,61 +422,44 @@ function DashboardPage({
           <button
             type="button"
             className="dashboard-tile"
-            onClick={() =>
-              onNavigate("p2p")
-            }
+            onClick={() => onNavigate("p2p")}
           >
-            <span className="tile-icon">
-              ⇄
-            </span>
+            <span className="tile-icon">⇄</span>
 
             <span className="tile-content">
               <strong>P2P Trading</strong>
               <small>
-                Buy and sell assets with other
-                users.
+                Buy and sell assets with other users.
               </small>
             </span>
 
-            <span className="tile-arrow">
-              ›
-            </span>
+            <span className="tile-arrow">›</span>
           </button>
 
           <button
             type="button"
             className="dashboard-tile"
-            onClick={() =>
-              onNavigate("orders")
-            }
+            onClick={() => onNavigate("orders")}
           >
-            <span className="tile-icon">
-              ▤
-            </span>
+            <span className="tile-icon">▤</span>
 
             <span className="tile-content">
               <strong>Orders</strong>
               <small>
-                View active, completed, and
-                cancelled orders.
+                View active, completed, and cancelled
+                orders.
               </small>
             </span>
 
-            <span className="tile-arrow">
-              ›
-            </span>
+            <span className="tile-arrow">›</span>
           </button>
 
           <button
             type="button"
             className="dashboard-tile"
-            onClick={() =>
-              onNavigate("settings")
-            }
+            onClick={() => onNavigate("settings")}
           >
-            <span className="tile-icon">
-              ⚙
-            </span>
+            <span className="tile-icon">⚙</span>
 
             <span className="tile-content">
               <strong>Settings</strong>
@@ -520,21 +468,15 @@ function DashboardPage({
               </small>
             </span>
 
-            <span className="tile-arrow">
-              ›
-            </span>
+            <span className="tile-arrow">›</span>
           </button>
 
           <button
             type="button"
             className="dashboard-tile"
-            onClick={() =>
-              onNavigate("help")
-            }
+            onClick={() => onNavigate("help")}
           >
-            <span className="tile-icon">
-              ?
-            </span>
+            <span className="tile-icon">?</span>
 
             <span className="tile-content">
               <strong>Help Center</strong>
@@ -544,9 +486,7 @@ function DashboardPage({
               </small>
             </span>
 
-            <span className="tile-arrow">
-              ›
-            </span>
+            <span className="tile-arrow">›</span>
           </button>
         </div>
       </section>
@@ -556,20 +496,16 @@ function DashboardPage({
 
 function DepositPage() {
   const [amount, setAmount] = useState("");
-  const [submitted, setSubmitted] =
-    useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   return (
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            Wallet
-          </span>
+          <span className="eyebrow">Wallet</span>
           <h1>Deposit</h1>
           <p>
-            Add funds to your Malexa Wallet
-            account.
+            Add funds to your Malexa Wallet account.
           </p>
         </div>
       </div>
@@ -581,9 +517,7 @@ function DepositPage() {
               <span className="settings-label">
                 Deposit method
               </span>
-              <strong>
-                Bank Transfer
-              </strong>
+              <strong>Bank Transfer</strong>
             </div>
 
             <span className="settings-badge">
@@ -609,9 +543,7 @@ function DepositPage() {
               <input
                 value={amount}
                 onChange={(event) =>
-                  setAmount(
-                    event.target.value,
-                  )
+                  setAmount(event.target.value)
                 }
                 inputMode="decimal"
                 placeholder="Enter deposit amount"
@@ -620,8 +552,7 @@ function DepositPage() {
                   minHeight: "45px",
                   marginTop: "7px",
                   padding: "10px 12px",
-                  border:
-                    "1px solid #d1d5db",
+                  border: "1px solid #d1d5db",
                   borderRadius: "10px",
                   outline: "none",
                 }}
@@ -639,9 +570,7 @@ function DepositPage() {
               type="button"
               className="primary-button"
               onClick={() => {
-                if (
-                  Number(amount) > 0
-                ) {
+                if (Number(amount) > 0) {
                   setSubmitted(true);
                 }
               }}
@@ -655,18 +584,13 @@ function DepositPage() {
       {submitted && (
         <section className="section-block">
           <div className="empty-state">
-            <div className="empty-state-icon">
-              ✓
-            </div>
+            <div className="empty-state-icon">✓</div>
 
-            <h3>
-              Deposit request created
-            </h3>
+            <h3>Deposit request created</h3>
 
             <p>
-              Your deposit request for $
-              {amount} has been recorded.
-              Payment processing will be
+              Your deposit request for ${amount} has
+              been recorded. Payment processing will be
               connected to the backend next.
             </p>
           </div>
@@ -678,20 +602,17 @@ function DepositPage() {
 
 function WithdrawPage() {
   const [amount, setAmount] = useState("");
-  const [submitted, setSubmitted] =
-    useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   return (
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            Wallet
-          </span>
+          <span className="eyebrow">Wallet</span>
           <h1>Withdraw</h1>
           <p>
-            Withdraw available funds from
-            your Malexa Wallet.
+            Withdraw available funds from your Malexa
+            Wallet.
           </p>
         </div>
       </div>
@@ -716,9 +637,7 @@ function WithdrawPage() {
               <input
                 value={amount}
                 onChange={(event) =>
-                  setAmount(
-                    event.target.value,
-                  )
+                  setAmount(event.target.value)
                 }
                 inputMode="decimal"
                 placeholder="Enter withdrawal amount"
@@ -727,8 +646,7 @@ function WithdrawPage() {
                   minHeight: "45px",
                   marginTop: "7px",
                   padding: "10px 12px",
-                  border:
-                    "1px solid #d1d5db",
+                  border: "1px solid #d1d5db",
                   borderRadius: "10px",
                   outline: "none",
                 }}
@@ -741,9 +659,7 @@ function WithdrawPage() {
               <span className="settings-label">
                 Payment account
               </span>
-              <strong>
-                Not configured
-              </strong>
+              <strong>Not configured</strong>
             </div>
 
             <span className="settings-badge">
@@ -761,9 +677,7 @@ function WithdrawPage() {
               type="button"
               className="primary-button"
               onClick={() => {
-                if (
-                  Number(amount) > 0
-                ) {
+                if (Number(amount) > 0) {
                   setSubmitted(true);
                 }
               }}
@@ -777,20 +691,15 @@ function WithdrawPage() {
       {submitted && (
         <section className="section-block">
           <div className="empty-state">
-            <div className="empty-state-icon">
-              ✓
-            </div>
+            <div className="empty-state-icon">✓</div>
 
-            <h3>
-              Withdrawal request created
-            </h3>
+            <h3>Withdrawal request created</h3>
 
             <p>
-              Your withdrawal request for $
-              {amount} has been recorded.
-              Balance verification and
-              payment processing will be
-              connected to the backend next.
+              Your withdrawal request for ${amount} has
+              been recorded. Balance verification and
+              payment processing will be connected to the
+              backend next.
             </p>
           </div>
         </section>
@@ -805,50 +714,36 @@ function P2PPage({
   onCreateOrder,
 }: {
   advertisements: Advertisement[];
-  onCreateAdvertisement: (
-    ad: Advertisement,
-  ) => void;
-  onCreateOrder: (
-    ad: Advertisement,
-    amount: string,
-  ) => void;
+  onCreateAdvertisement: (ad: Advertisement) => void;
+  onCreateOrder: (ad: Advertisement, amount: string) => void;
 }) {
-  const [tab, setTab] =
-    useState<P2PTab>("buy");
-
-  const [showCreate, setShowCreate] =
-    useState(false);
-
+  const [tab, setTab] = useState<P2PTab>("buy");
+  const [showCreate, setShowCreate] = useState(false);
   const [selectedAd, setSelectedAd] =
     useState<Advertisement | null>(null);
 
-  const matchingAds =
-    advertisements.filter(
-      (ad) => ad.type === tab,
-    );
+  const matchingAds = advertisements.filter(
+    (ad) => ad.type === tab,
+  );
 
   return (
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            Peer to peer
-          </span>
+          <span className="eyebrow">Peer to peer</span>
 
           <h1>P2P Trading</h1>
 
           <p>
-            Buy and sell assets directly
-            with other Malexa Wallet users.
+            Buy and sell assets directly with other
+            Malexa Wallet users.
           </p>
         </div>
 
         <button
           type="button"
           className="primary-button"
-          onClick={() =>
-            setShowCreate(true)
-          }
+          onClick={() => setShowCreate(true)}
         >
           + Create Advertisement
         </button>
@@ -857,11 +752,7 @@ function P2PPage({
       <div className="tab-bar">
         <button
           type="button"
-          className={
-            tab === "buy"
-              ? "tab active"
-              : "tab"
-          }
+          className={tab === "buy" ? "tab active" : "tab"}
           onClick={() => setTab("buy")}
         >
           Buy
@@ -869,11 +760,7 @@ function P2PPage({
 
         <button
           type="button"
-          className={
-            tab === "sell"
-              ? "tab active"
-              : "tab"
-          }
+          className={tab === "sell" ? "tab active" : "tab"}
           onClick={() => setTab("sell")}
         >
           Sell
@@ -894,9 +781,7 @@ function P2PPage({
 
           <div className="filter-box">
             <span>Payment</span>
-            <strong>
-              Bank Transfer
-            </strong>
+            <strong>Bank Transfer</strong>
           </div>
         </div>
       </section>
@@ -905,16 +790,12 @@ function P2PPage({
         <div className="section-heading">
           <div>
             <h2>
-              {tab === "buy"
-                ? "Buy USDT"
-                : "Sell USDT"}
+              {tab === "buy" ? "Buy USDT" : "Sell USDT"}
             </h2>
 
             <p>
               {matchingAds.length} advertisement
-              {matchingAds.length === 1
-                ? ""
-                : "s"} available
+              {matchingAds.length === 1 ? "" : "s"} available
             </p>
           </div>
         </div>
@@ -926,10 +807,7 @@ function P2PPage({
           }}
         >
           {matchingAds.map((ad) => (
-            <div
-              className="settings-card"
-              key={ad.id}
-            >
+            <div className="settings-card" key={ad.id}>
               <div className="settings-row">
                 <div>
                   <span className="settings-label">
@@ -937,8 +815,7 @@ function P2PPage({
                   </span>
 
                   <strong>
-                    {ad.currency}{" "}
-                    {ad.price} / {ad.asset}
+                    {ad.currency} {ad.price} / {ad.asset}
                   </strong>
                 </div>
 
@@ -954,8 +831,7 @@ function P2PPage({
                   </span>
 
                   <strong>
-                    {ad.currency}{" "}
-                    {ad.minLimit} -{" "}
+                    {ad.currency} {ad.minLimit} -{" "}
                     {ad.maxLimit}
                   </strong>
                 </div>
@@ -967,9 +843,7 @@ function P2PPage({
                     Payment
                   </span>
 
-                  <strong>
-                    {ad.payment}
-                  </strong>
+                  <strong>{ad.payment}</strong>
                 </div>
               </div>
 
@@ -979,21 +853,15 @@ function P2PPage({
                     Advertiser
                   </span>
 
-                  <strong>
-                    {ad.owner}
-                  </strong>
+                  <strong>{ad.owner}</strong>
                 </div>
 
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={() =>
-                    setSelectedAd(ad)
-                  }
+                  onClick={() => setSelectedAd(ad)}
                 >
-                  {tab === "buy"
-                    ? "Buy"
-                    : "Sell"}
+                  {tab === "buy" ? "Buy" : "Sell"}
                 </button>
               </div>
             </div>
@@ -1004,9 +872,7 @@ function P2PPage({
       {showCreate && (
         <CreateAdvertisement
           defaultType={tab}
-          onClose={() =>
-            setShowCreate(false)
-          }
+          onClose={() => setShowCreate(false)}
           onCreate={(ad) => {
             onCreateAdvertisement(ad);
             setShowCreate(false);
@@ -1017,14 +883,9 @@ function P2PPage({
       {selectedAd && (
         <TradeAdvertisement
           ad={selectedAd}
-          onClose={() =>
-            setSelectedAd(null)
-          }
+          onClose={() => setSelectedAd(null)}
           onTrade={(amount) => {
-            onCreateOrder(
-              selectedAd,
-              amount,
-            );
+            onCreateOrder(selectedAd, amount);
             setSelectedAd(null);
           }}
         />
@@ -1040,31 +901,16 @@ function CreateAdvertisement({
 }: {
   defaultType: P2PTab;
   onClose: () => void;
-  onCreate: (
-    ad: Advertisement,
-  ) => void;
+  onCreate: (ad: Advertisement) => void;
 }) {
-  const [type, setType] =
-    useState<P2PTab>(defaultType);
-
-  const [price, setPrice] =
-    useState("");
-
-  const [minLimit, setMinLimit] =
-    useState("");
-
-  const [maxLimit, setMaxLimit] =
-    useState("");
-
-  const [payment, setPayment] =
-    useState("Bank Transfer");
+  const [type, setType] = useState<P2PTab>(defaultType);
+  const [price, setPrice] = useState("");
+  const [minLimit, setMinLimit] = useState("");
+  const [maxLimit, setMaxLimit] = useState("");
+  const [payment, setPayment] = useState("Bank Transfer");
 
   const submit = () => {
-    if (
-      !price ||
-      !minLimit ||
-      !maxLimit
-    ) {
+    if (!price || !minLimit || !maxLimit) {
       return;
     }
 
@@ -1086,13 +932,10 @@ function CreateAdvertisement({
   return (
     <div className="auth-overlay">
       <div className="auth-card">
-        <h2>
-          Create Advertisement
-        </h2>
+        <h2>Create Advertisement</h2>
 
         <p>
-          Create a P2P advertisement for
-          other users.
+          Create a P2P advertisement for other users.
         </p>
 
         <div
@@ -1106,28 +949,16 @@ function CreateAdvertisement({
           <div className="tab-bar">
             <button
               type="button"
-              className={
-                type === "buy"
-                  ? "tab active"
-                  : "tab"
-              }
-              onClick={() =>
-                setType("buy")
-              }
+              className={type === "buy" ? "tab active" : "tab"}
+              onClick={() => setType("buy")}
             >
               Buy
             </button>
 
             <button
               type="button"
-              className={
-                type === "sell"
-                  ? "tab active"
-                  : "tab"
-              }
-              onClick={() =>
-                setType("sell")
-              }
+              className={type === "sell" ? "tab active" : "tab"}
+              onClick={() => setType("sell")}
             >
               Sell
             </button>
@@ -1140,8 +971,7 @@ function CreateAdvertisement({
             style={{
               minHeight: "45px",
               padding: "10px 12px",
-              border:
-                "1px solid #d1d5db",
+              border: "1px solid #d1d5db",
               borderRadius: "10px",
               background: "#f3f4f6",
             }}
@@ -1150,11 +980,7 @@ function CreateAdvertisement({
           <label>Price (USD)</label>
           <input
             value={price}
-            onChange={(event) =>
-              setPrice(
-                event.target.value,
-              )
-            }
+            onChange={(event) => setPrice(event.target.value)}
             inputMode="decimal"
             placeholder="Example: 1.02"
           />
@@ -1163,9 +989,7 @@ function CreateAdvertisement({
           <input
             value={minLimit}
             onChange={(event) =>
-              setMinLimit(
-                event.target.value,
-              )
+              setMinLimit(event.target.value)
             }
             inputMode="decimal"
             placeholder="Example: 10"
@@ -1175,9 +999,7 @@ function CreateAdvertisement({
           <input
             value={maxLimit}
             onChange={(event) =>
-              setMaxLimit(
-                event.target.value,
-              )
+              setMaxLimit(event.target.value)
             }
             inputMode="decimal"
             placeholder="Example: 1000"
@@ -1186,26 +1008,17 @@ function CreateAdvertisement({
           <label>Payment method</label>
           <select
             value={payment}
-            onChange={(event) =>
-              setPayment(
-                event.target.value,
-              )
-            }
+            onChange={(event) => setPayment(event.target.value)}
             style={{
               minHeight: "45px",
               padding: "10px 12px",
-              border:
-                "1px solid #d1d5db",
+              border: "1px solid #d1d5db",
               borderRadius: "10px",
               background: "#ffffff",
             }}
           >
-            <option>
-              Bank Transfer
-            </option>
-            <option>
-              Mobile Money
-            </option>
+            <option>Bank Transfer</option>
+            <option>Mobile Money</option>
           </select>
 
           <div
@@ -1219,9 +1032,7 @@ function CreateAdvertisement({
               type="button"
               className="secondary-button"
               onClick={onClose}
-              style={{
-                flex: 1,
-              }}
+              style={{ flex: 1 }}
             >
               Cancel
             </button>
@@ -1230,9 +1041,7 @@ function CreateAdvertisement({
               type="button"
               className="primary-button"
               onClick={submit}
-              style={{
-                flex: 1,
-              }}
+              style={{ flex: 1 }}
             >
               Publish Ad
             </button>
@@ -1250,50 +1059,35 @@ function TradeAdvertisement({
 }: {
   ad: Advertisement;
   onClose: () => void;
-  onTrade: (
-    amount: string,
-  ) => void;
+  onTrade: (amount: string) => void;
 }) {
-  const [amount, setAmount] =
-    useState("");
+  const [amount, setAmount] = useState("");
 
-  const total =
-    Number(amount) * Number(ad.price);
+  const total = Number(amount) * Number(ad.price);
 
   const validAmount =
     Number(amount) > 0 &&
     Number(amount) >=
-      Number(ad.minLimit) /
-        Number(ad.price) &&
+      Number(ad.minLimit) / Number(ad.price) &&
     Number(amount) <=
-      Number(ad.maxLimit) /
-        Number(ad.price);
+      Number(ad.maxLimit) / Number(ad.price);
 
   return (
     <div className="auth-overlay">
       <div className="auth-card">
         <h2>
-          {ad.type === "buy"
-            ? "Buy USDT"
-            : "Sell USDT"}
+          {ad.type === "buy" ? "Buy USDT" : "Sell USDT"}
         </h2>
 
         <p>
-          Price: {ad.currency}{" "}
-          {ad.price} / {ad.asset}
+          Price: {ad.currency} {ad.price} / {ad.asset}
         </p>
 
-        <label>
-          Amount in USDT
-        </label>
+        <label>Amount in USDT</label>
 
         <input
           value={amount}
-          onChange={(event) =>
-            setAmount(
-              event.target.value,
-            )
-          }
+          onChange={(event) => setAmount(event.target.value)}
           inputMode="decimal"
           placeholder="Enter USDT amount"
         />
@@ -1306,15 +1100,9 @@ function TradeAdvertisement({
             background: "#f9fafb",
           }}
         >
-          <span className="settings-label">
-            Total
-          </span>
+          <span className="settings-label">Total</span>
 
-          <strong
-            style={{
-              fontSize: "20px",
-            }}
-          >
+          <strong style={{ fontSize: "20px" }}>
             USD{" "}
             {Number.isFinite(total)
               ? total.toFixed(2)
@@ -1333,9 +1121,7 @@ function TradeAdvertisement({
             type="button"
             className="secondary-button"
             onClick={onClose}
-            style={{
-              flex: 1,
-            }}
+            style={{ flex: 1 }}
           >
             Cancel
           </button>
@@ -1351,14 +1137,10 @@ function TradeAdvertisement({
             }}
             style={{
               flex: 1,
-              opacity: validAmount
-                ? 1
-                : 0.5,
+              opacity: validAmount ? 1 : 0.5,
             }}
           >
-            {ad.type === "buy"
-              ? "Buy Now"
-              : "Sell Now"}
+            {ad.type === "buy" ? "Buy Now" : "Sell Now"}
           </button>
         </div>
 
@@ -1368,8 +1150,7 @@ function TradeAdvertisement({
             fontSize: "11px",
           }}
         >
-          Limit: {ad.minLimit} -{" "}
-          {ad.maxLimit} USD
+          Limit: {ad.minLimit} - {ad.maxLimit} USD
         </p>
       </div>
     </div>
@@ -1381,31 +1162,25 @@ function OrdersPage({
   onCancelOrder,
 }: {
   orders: Order[];
-  onCancelOrder: (
-    orderId: number,
-  ) => void;
+  onCancelOrder: (orderId: number) => void;
 }) {
-  const [tab, setTab] =
-    useState<OrderTab>("active");
+  const [tab, setTab] = useState<OrderTab>("active");
 
-  const visibleOrders =
-    orders.filter(
-      (order) => order.status === tab,
-    );
+  const visibleOrders = orders.filter(
+    (order) => order.status === tab,
+  );
 
   return (
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            Trading history
-          </span>
+          <span className="eyebrow">Trading history</span>
 
           <h1>Orders</h1>
 
           <p>
-            Track your P2P orders from
-            creation to completion.
+            Track your P2P orders from creation to
+            completion.
           </p>
         </div>
       </div>
@@ -1414,13 +1189,9 @@ function OrdersPage({
         <button
           type="button"
           className={
-            tab === "active"
-              ? "tab active"
-              : "tab"
+            tab === "active" ? "tab active" : "tab"
           }
-          onClick={() =>
-            setTab("active")
-          }
+          onClick={() => setTab("active")}
         >
           Active
         </button>
@@ -1428,13 +1199,9 @@ function OrdersPage({
         <button
           type="button"
           className={
-            tab === "completed"
-              ? "tab active"
-              : "tab"
+            tab === "completed" ? "tab active" : "tab"
           }
-          onClick={() =>
-            setTab("completed")
-          }
+          onClick={() => setTab("completed")}
         >
           Completed
         </button>
@@ -1442,13 +1209,9 @@ function OrdersPage({
         <button
           type="button"
           className={
-            tab === "cancelled"
-              ? "tab active"
-              : "tab"
+            tab === "cancelled" ? "tab active" : "tab"
           }
-          onClick={() =>
-            setTab("cancelled")
-          }
+          onClick={() => setTab("cancelled")}
         >
           Cancelled
         </button>
@@ -1457,9 +1220,7 @@ function OrdersPage({
       <section className="section-block">
         {visibleOrders.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">
-              ▤
-            </div>
+            <div className="empty-state-icon">▤</div>
 
             <h3>
               {tab === "active"
@@ -1484,88 +1245,75 @@ function OrdersPage({
               gap: "14px",
             }}
           >
-            {visibleOrders.map(
-              (order) => (
-                <div
-                  className="settings-card"
-                  key={order.id}
-                >
-                  <div className="settings-row">
-                    <div>
-                      <span className="settings-label">
-                        Order
-                      </span>
-
-                      <strong>
-                        #
-                        {order.id}
-                      </strong>
-                    </div>
-
-                    <span className="settings-badge">
-                      {order.status}
+            {visibleOrders.map((order) => (
+              <div
+                className="settings-card"
+                key={order.id}
+              >
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Order
                     </span>
+
+                    <strong>#{order.id}</strong>
                   </div>
 
-                  <div className="settings-row">
-                    <div>
-                      <span className="settings-label">
-                        Trade
-                      </span>
+                  <span className="settings-badge">
+                    {order.status}
+                  </span>
+                </div>
 
-                      <strong>
-                        {order.type ===
-                        "buy"
-                          ? "Buy"
-                          : "Sell"}{" "}
-                        {order.amount}{" "}
-                        {order.asset}
-                      </strong>
-                    </div>
-                  </div>
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Trade
+                    </span>
 
-                  <div className="settings-row">
-                    <div>
-                      <span className="settings-label">
-                        Total
-                      </span>
-
-                      <strong>
-                        {order.currency}{" "}
-                        {order.total}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="settings-row">
-                    <div>
-                      <span className="settings-label">
-                        Payment
-                      </span>
-
-                      <strong>
-                        {order.payment}
-                      </strong>
-                    </div>
-
-                    {order.status ===
-                      "active" && (
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() =>
-                          onCancelOrder(
-                            order.id,
-                          )
-                        }
-                      >
-                        Cancel Order
-                      </button>
-                    )}
+                    <strong>
+                      {order.type === "buy"
+                        ? "Buy"
+                        : "Sell"}{" "}
+                      {order.amount} {order.asset}
+                    </strong>
                   </div>
                 </div>
-              ),
-            )}
+
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Total
+                    </span>
+
+                    <strong>
+                      {order.currency} {order.total}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Payment
+                    </span>
+
+                    <strong>{order.payment}</strong>
+                  </div>
+
+                  {order.status === "active" && (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        onCancelOrder(order.id)
+                      }
+                    >
+                      Cancel Order
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>
@@ -1574,6 +1322,78 @@ function OrdersPage({
 }
 
 function SettingsPage() {
+  const [depositAddress, setDepositAddress] =
+    useState<string | null>(null);
+
+  const [addressLoading, setAddressLoading] =
+    useState(false);
+
+  const [addressMessage, setAddressMessage] =
+    useState<string | null>(null);
+
+  const [addressError, setAddressError] =
+    useState<string | null>(null);
+
+  const loadDepositAddress = async () => {
+    setAddressLoading(true);
+    setAddressMessage(null);
+    setAddressError(null);
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase.functions.invoke(
+        "get-deposit-address",
+        {
+          body: {},
+        },
+      );
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const result =
+        data as DepositAddressResponse;
+
+      if (result.address) {
+        setDepositAddress(result.address);
+
+        setAddressMessage(
+          "Your BEP20 deposit address is ready.",
+        );
+
+        return;
+      }
+
+      if (result.address_required) {
+        setAddressMessage(
+          result.message ??
+            "A BEP20 deposit address has not been assigned yet.",
+        );
+
+        return;
+      }
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      setAddressMessage(
+        "No BEP20 deposit address is available yet.",
+      );
+    } catch (error) {
+      setAddressError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load deposit address.",
+      );
+    } finally {
+      setAddressLoading(false);
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="page-heading">
@@ -1585,9 +1405,8 @@ function SettingsPage() {
           <h1>Settings</h1>
 
           <p>
-            Manage your profile, KYC
-            verification, and payment
-            account.
+            Manage your profile, KYC, payment account,
+            and deposit settings.
           </p>
         </div>
       </div>
@@ -1596,9 +1415,7 @@ function SettingsPage() {
         <div className="section-heading">
           <div>
             <h2>Profile</h2>
-            <p>
-              Your Malexa Wallet account
-            </p>
+            <p>Your Malexa Wallet account</p>
           </div>
         </div>
 
@@ -1625,9 +1442,8 @@ function SettingsPage() {
             <h2>KYC Verification</h2>
 
             <p>
-              Complete verification to use
-              features that require identity
-              verification.
+              Complete verification to use features
+              that require identity verification.
             </p>
           </div>
         </div>
@@ -1639,9 +1455,7 @@ function SettingsPage() {
                 Verification status
               </span>
 
-              <strong>
-                Not submitted
-              </strong>
+              <strong>Not submitted</strong>
             </div>
 
             <button
@@ -1660,8 +1474,8 @@ function SettingsPage() {
             <h2>Payment Account</h2>
 
             <p>
-              Save the payment account you
-              use for P2P transactions.
+              Save the payment account you use for P2P
+              transactions.
             </p>
           </div>
         </div>
@@ -1673,9 +1487,7 @@ function SettingsPage() {
                 Saved payment account
               </span>
 
-              <strong>
-                Not configured
-              </strong>
+              <strong>Not configured</strong>
             </div>
 
             <button
@@ -1683,6 +1495,131 @@ function SettingsPage() {
               className="secondary-button"
             >
               Add Account
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <h2>USDT Deposit</h2>
+
+            <p>
+              Your BEP20 deposit address will be shown
+              here once it has been securely assigned.
+            </p>
+          </div>
+        </div>
+
+        <div className="settings-card">
+          <div className="settings-row">
+            <div style={{ width: "100%" }}>
+              <span className="settings-label">
+                Network
+              </span>
+
+              <strong>BNB Smart Chain (BEP20)</strong>
+            </div>
+
+            <span className="settings-badge">
+              USDT
+            </span>
+          </div>
+
+          {depositAddress ? (
+            <div className="settings-row">
+              <div
+                style={{
+                  width: "100%",
+                }}
+              >
+                <span className="settings-label">
+                  Deposit address
+                </span>
+
+                <div
+                  style={{
+                    marginTop: "8px",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "10px",
+                    background: "#f9fafb",
+                    wordBreak: "break-all",
+                    fontFamily: "monospace",
+                    fontSize: "13px",
+                  }}
+                >
+                  {depositAddress}
+                </div>
+
+                <small
+                  style={{
+                    display: "block",
+                    marginTop: "8px",
+                  }}
+                >
+                  Send only USDT on the BEP20 network to
+                  this address.
+                </small>
+              </div>
+            </div>
+          ) : null}
+
+          {addressMessage && (
+            <div
+              className="settings-row"
+              style={{
+                display: "block",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                }}
+              >
+                {addressMessage}
+              </p>
+            </div>
+          )}
+
+          {addressError && (
+            <div
+              className="settings-row"
+              style={{
+                display: "block",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                }}
+              >
+                {addressError}
+              </p>
+            </div>
+          )}
+
+          <div
+            className="settings-row"
+            style={{
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              type="button"
+              className="primary-button"
+              onClick={loadDepositAddress}
+              disabled={addressLoading}
+              style={{
+                opacity: addressLoading ? 0.6 : 1,
+              }}
+            >
+              {addressLoading
+                ? "Checking..."
+                : depositAddress
+                  ? "Refresh Address"
+                  : "Get Deposit Address"}
             </button>
           </div>
         </div>
@@ -1724,48 +1661,36 @@ function HelpPage() {
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            Support
-          </span>
+          <span className="eyebrow">Support</span>
 
           <h1>Help Center</h1>
 
           <p>
-            Choose a category to get help
-            with your account.
+            Choose a category to get help with your
+            account.
           </p>
         </div>
       </div>
 
       <section className="section-block">
         <div className="help-category-list">
-          {categories.map(
-            (category) => (
-              <button
-                type="button"
-                className="help-category"
-                key={category.title}
-              >
-                <span className="help-category-icon">
-                  ?
-                </span>
+          {categories.map((category) => (
+            <button
+              type="button"
+              className="help-category"
+              key={category.title}
+            >
+              <span className="help-category-icon">?</span>
 
-                <span className="help-category-content">
-                  <strong>
-                    {category.title}
-                  </strong>
+              <span className="help-category-content">
+                <strong>{category.title}</strong>
 
-                  <small>
-                    {category.description}
-                  </small>
-                </span>
+                <small>{category.description}</small>
+              </span>
 
-                <span className="tile-arrow">
-                  ›
-                </span>
-              </button>
-            ),
-          )}
+              <span className="tile-arrow">›</span>
+            </button>
+          ))}
         </div>
       </section>
     </div>
@@ -1790,9 +1715,7 @@ function BottomNavigation({
               ? "bottom-nav-item active"
               : "bottom-nav-item"
           }
-          onClick={() =>
-            onNavigate(item.id)
-          }
+          onClick={() => onNavigate(item.id)}
         >
           <span className="bottom-nav-icon">
             {item.icon}
@@ -1811,40 +1734,29 @@ function LandingPage() {
       <div className="landing-content">
         <Brand />
 
-        <span className="eyebrow">
-          Digital wallet
-        </span>
+        <span className="eyebrow">Digital wallet</span>
 
-        <h1>
-          Welcome to Malexa Wallet
-        </h1>
+        <h1>Welcome to Malexa Wallet</h1>
 
         <p>
-          Manage your account, trade
-          through P2P, and keep your wallet
-          activity in one place.
+          Manage your account, trade through P2P, and
+          keep your wallet activity in one place.
         </p>
 
         <div className="landing-features">
           <div>
             <span>✓</span>
-            <strong>
-              Secure account access
-            </strong>
+            <strong>Secure account access</strong>
           </div>
 
           <div>
             <span>✓</span>
-            <strong>
-              P2P trading
-            </strong>
+            <strong>P2P trading</strong>
           </div>
 
           <div>
             <span>✓</span>
-            <strong>
-              Account management
-            </strong>
+            <strong>Account management</strong>
           </div>
         </div>
       </div>
@@ -1855,9 +1767,7 @@ function LandingPage() {
 function Brand() {
   return (
     <div className="brand">
-      <div className="brand-mark">
-        M
-      </div>
+      <div className="brand-mark">M</div>
 
       <div className="brand-text">
         <strong>Malexa</strong>
