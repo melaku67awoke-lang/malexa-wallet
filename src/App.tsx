@@ -495,17 +495,108 @@ function DashboardPage({
 }
 
 function DepositPage() {
-  const [amount, setAmount] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [depositAddress, setDepositAddress] =
+    useState<string | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const getDepositAddress = async () => {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    setCopied(false);
+
+    try {
+      const { data, error: functionError } =
+        await supabase.functions.invoke(
+          "hyper-processor",
+          {
+            body: {
+              action: "get_deposit_address",
+            },
+          },
+        );
+
+      if (functionError) {
+        throw new Error(functionError.message);
+      }
+
+      const result =
+        data as DepositAddressResponse;
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (result.address) {
+        setDepositAddress(result.address);
+
+        setMessage(
+          "Your unique BEP-20 USDT deposit address is ready.",
+        );
+
+        return;
+      }
+
+      if (result.address_required) {
+        setMessage(
+          result.message ??
+            "Your BEP-20 deposit address is not available yet.",
+        );
+
+        return;
+      }
+
+      throw new Error(
+        "The deposit service did not return a deposit address.",
+      );
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to get your deposit address.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyAddress = async () => {
+    if (!depositAddress) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        depositAddress,
+      );
+
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      setError(
+        "Unable to copy the address. Please copy it manually.",
+      );
+    }
+  };
 
   return (
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Wallet</span>
+          <span className="eyebrow">USDT Deposit</span>
+
           <h1>Deposit</h1>
+
           <p>
-            Add funds to your Malexa Wallet account.
+            Deposit USDT to your Malexa Wallet using
+            the BEP-20 network.
           </p>
         </div>
       </div>
@@ -515,50 +606,124 @@ function DepositPage() {
           <div className="settings-row">
             <div>
               <span className="settings-label">
-                Deposit method
+                Asset
               </span>
-              <strong>Bank Transfer</strong>
+
+              <strong>USDT</strong>
             </div>
 
             <span className="settings-badge">
-              Available
+              USDT
             </span>
           </div>
 
           <div className="settings-row">
             <div>
               <span className="settings-label">
-                Currency
+                Network
               </span>
-              <strong>USD</strong>
+
+              <strong>
+                BNB Smart Chain (BEP-20)
+              </strong>
             </div>
+
+            <span className="settings-badge">
+              BEP-20
+            </span>
           </div>
 
           <div className="settings-row">
-            <div style={{ width: "100%" }}>
+            <div>
               <span className="settings-label">
-                Amount
+                Deposit method
               </span>
 
-              <input
-                value={amount}
-                onChange={(event) =>
-                  setAmount(event.target.value)
-                }
-                inputMode="decimal"
-                placeholder="Enter deposit amount"
-                style={{
-                  width: "100%",
-                  minHeight: "45px",
-                  marginTop: "7px",
-                  padding: "10px 12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "10px",
-                  outline: "none",
-                }}
-              />
+              <strong>
+                Personal deposit address
+              </strong>
             </div>
           </div>
+
+          {!depositAddress && (
+            <div className="settings-row">
+              <div style={{ width: "100%" }}>
+                <p style={{ margin: 0 }}>
+                  Each Malexa Wallet user will receive
+                  a unique BEP-20 deposit address.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {depositAddress && (
+            <div className="settings-row">
+              <div style={{ width: "100%" }}>
+                <span className="settings-label">
+                  Your deposit address
+                </span>
+
+                <div
+                  style={{
+                    marginTop: "8px",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "10px",
+                    background: "#f9fafb",
+                    wordBreak: "break-all",
+                    fontFamily: "monospace",
+                    fontSize: "13px",
+                  }}
+                >
+                  {depositAddress}
+                </div>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={copyAddress}
+                  style={{
+                    marginTop: "10px",
+                    width: "100%",
+                  }}
+                >
+                  {copied
+                    ? "Address Copied ✓"
+                    : "Copy Address"}
+                </button>
+
+                <small
+                  style={{
+                    display: "block",
+                    marginTop: "10px",
+                  }}
+                >
+                  Send only USDT on the BEP-20 network
+                  to this address.
+                </small>
+              </div>
+            </div>
+          )}
+
+          {message && (
+            <div className="settings-row">
+              <div style={{ width: "100%" }}>
+                <p style={{ margin: 0 }}>
+                  {message}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="settings-row">
+              <div style={{ width: "100%" }}>
+                <p style={{ margin: 0 }}>
+                  {error}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div
             className="settings-row"
@@ -569,33 +734,35 @@ function DepositPage() {
             <button
               type="button"
               className="primary-button"
-              onClick={() => {
-                if (Number(amount) > 0) {
-                  setSubmitted(true);
-                }
+              onClick={getDepositAddress}
+              disabled={loading}
+              style={{
+                opacity: loading ? 0.6 : 1,
               }}
             >
-              Continue Deposit
+              {loading
+                ? "Getting Address..."
+                : depositAddress
+                  ? "Refresh Address"
+                  : "Get Deposit Address"}
             </button>
           </div>
         </div>
       </section>
 
-      {submitted && (
-        <section className="section-block">
-          <div className="empty-state">
-            <div className="empty-state-icon">✓</div>
+      <section className="section-block">
+        <div className="empty-state">
+          <div className="empty-state-icon">!</div>
 
-            <h3>Deposit request created</h3>
+          <h3>Important</h3>
 
-            <p>
-              Your deposit request for ${amount} has
-              been recorded. Payment processing will be
-              connected to the backend next.
-            </p>
-          </div>
-        </section>
-      )}
+          <p>
+            Only send USDT using the BEP-20 network.
+            Sending another asset or using another
+            network may result in permanent loss of funds.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
