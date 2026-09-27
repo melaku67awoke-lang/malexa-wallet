@@ -109,6 +109,82 @@ const initialAds: Advertisement[] = [
   },
 ];
 
+/*
+ * Directly calls the exact Edge Function URL.
+ *
+ * This intentionally does NOT use:
+ * supabase.functions.invoke(...)
+ *
+ * The request is explicitly sent to:
+ * /functions/v1/get-deposit-address
+ *
+ * Therefore this code does not reference or call
+ * the old hyper-processor function.
+ */
+async function requestDepositAddress(): Promise<DepositAddressResponse> {
+  const {
+    data: { session: currentSession },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!currentSession?.access_token) {
+    throw new Error(
+      "Your login session has expired. Please sign in again.",
+    );
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const publishableKey =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !publishableKey) {
+    throw new Error(
+      "Missing Supabase configuration.",
+    );
+  }
+
+  const response = await fetch(
+    `${supabaseUrl}/functions/v1/get-deposit-address`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: publishableKey,
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+      body: JSON.stringify({
+        action: "get_deposit_address",
+      }),
+    },
+  );
+
+  const responseText = await response.text();
+
+  let result: DepositAddressResponse;
+
+  try {
+    result = JSON.parse(responseText) as DepositAddressResponse;
+  } catch {
+    throw new Error(
+      `Deposit service returned HTTP ${response.status}.`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      result.error ??
+        result.message ??
+        `Deposit service returned HTTP ${response.status}.`,
+    );
+  }
+
+  return result;
+}
+
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -510,44 +586,7 @@ function DepositPage() {
     setCopied(false);
 
     try {
-      const {
-        data: { session: currentSession },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      if (!currentSession?.access_token) {
-        throw new Error(
-          "Your login session has expired. Please sign in again.",
-        );
-      }
-
-      const { data, error: functionError } =
-        await supabase.functions.invoke(
-          "get-deposit-address",
-          {
-            body: {
-              action: "get_deposit_address",
-            },
-            headers: {
-              Authorization: `Bearer ${currentSession.access_token}`,
-            },
-          },
-        );
-
-      if (functionError) {
-        throw new Error(functionError.message);
-      }
-
-      const result =
-        data as DepositAddressResponse;
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      const result = await requestDepositAddress();
 
       if (result.address) {
         setDepositAddress(result.address);
@@ -569,7 +608,8 @@ function DepositPage() {
       }
 
       throw new Error(
-        "The deposit service did not return a deposit address.",
+        result.error ??
+          "The deposit service did not return a deposit address.",
       );
     } catch (requestError) {
       setError(
@@ -1525,40 +1565,7 @@ function SettingsPage() {
     setAddressError(null);
 
     try {
-      const {
-        data: { session: currentSession },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      if (!currentSession?.access_token) {
-        throw new Error(
-          "Your login session has expired. Please sign in again.",
-        );
-      }
-
-      const {
-        data,
-        error,
-      } = await supabase.functions.invoke(
-        "get-deposit-address",
-        {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${currentSession.access_token}`,
-          },
-        },
-      );
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const result =
-        data as DepositAddressResponse;
+      const result = await requestDepositAddress();
 
       if (result.address) {
         setDepositAddress(result.address);
