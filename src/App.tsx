@@ -16,21 +16,46 @@ type Page =
 type P2PTab = "buy" | "sell";
 type OrderTab = "active" | "completed" | "cancelled";
 
+const USDT_ASSET_ID =
+  "d78cd3f3-5fc1-4b59-8f41-86e617017b74";
+
 type Advertisement = {
-  id: number;
+  id: string;
+  userId: string;
   type: P2PTab;
   asset: string;
   currency: string;
   price: string;
   minLimit: string;
   maxLimit: string;
+  availableAmount: string;
   payment: string;
+  paymentAccountId: string | null;
+  paymentTimeLimitMinutes: number;
+  terms: string;
+  status: string;
   owner: string;
 };
 
+type PaymentAccount = {
+  id: string;
+  bankId: string | null;
+  bankName: string;
+  accountNumber: string;
+  accountHolderName: string;
+  isDefault: boolean;
+  isActive: boolean;
+};
+
+type Bank = {
+  id: string;
+  bank_name: string;
+  is_active: boolean;
+};
+
 type Order = {
-  id: number;
-  adId: number;
+  id: string;
+  adId: string;
   type: P2PTab;
   asset: string;
   currency: string;
@@ -38,6 +63,13 @@ type Order = {
   total: string;
   payment: string;
   status: OrderTab;
+  rawStatus: string;
+  paymentReference: string | null;
+  buyerId: string;
+  sellerId: string;
+  buyerPaymentAccountId: string | null;
+  sellerPaymentAccountId: string | null;
+  createdAt: string;
 };
 
 type DepositAddressResponse = {
@@ -50,6 +82,11 @@ type DepositAddressResponse = {
   address_required?: boolean;
   message?: string;
   error?: string;
+};
+
+type KycInfo = {
+  status: string;
+  legalName: string | null;
 };
 
 const navigation: Array<{
@@ -84,31 +121,6 @@ const navigation: Array<{
   },
 ];
 
-const initialAds: Advertisement[] = [
-  {
-    id: 1,
-    type: "buy",
-    asset: "USDT",
-    currency: "USD",
-    price: "1.00",
-    minLimit: "10",
-    maxLimit: "500",
-    payment: "Bank Transfer",
-    owner: "Malexa User",
-  },
-  {
-    id: 2,
-    type: "sell",
-    asset: "USDT",
-    currency: "USD",
-    price: "1.02",
-    minLimit: "10",
-    maxLimit: "1,000",
-    payment: "Bank Transfer",
-    owner: "Malexa User",
-  },
-];
-
 /*
  * Directly calls the exact Edge Function URL.
  *
@@ -117,9 +129,6 @@ const initialAds: Advertisement[] = [
  *
  * The request is explicitly sent to:
  * /functions/v1/get-deposit-address
- *
- * Therefore this code does not reference or call
- * the old hyper-processor function.
  */
 async function requestDepositAddress(): Promise<DepositAddressResponse> {
   const {
@@ -142,9 +151,7 @@ async function requestDepositAddress(): Promise<DepositAddressResponse> {
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !publishableKey) {
-    throw new Error(
-      "Missing Supabase configuration.",
-    );
+    throw new Error("Missing Supabase configuration.");
   }
 
   const response = await fetch(
@@ -235,6 +242,7 @@ function App() {
     return (
       <div className="app-shell">
         <LandingPage />
+
         <div className="auth-overlay">
           <AuthScreen />
         </div>
@@ -248,11 +256,6 @@ function App() {
 function SignedInApp({ session }: { session: Session }) {
   const [page, setPage] = useState<Page>("dashboard");
 
-  const [advertisements, setAdvertisements] =
-    useState<Advertisement[]>(initialAds);
-
-  const [orders, setOrders] = useState<Order[]>([]);
-
   const email = session.user.email ?? "Account";
 
   const navigate = (nextPage: Page) => {
@@ -262,57 +265,6 @@ function SignedInApp({ session }: { session: Session }) {
       top: 0,
       behavior: "smooth",
     });
-  };
-
-  const createAdvertisement = (ad: Advertisement) => {
-    setAdvertisements((current) => [ad, ...current]);
-  };
-
-  const createOrder = (
-    ad: Advertisement,
-    amount: string,
-  ) => {
-    const numericAmount = Number(amount);
-    const numericPrice = Number(ad.price);
-
-    if (
-      !Number.isFinite(numericAmount) ||
-      numericAmount <= 0 ||
-      !Number.isFinite(numericPrice)
-    ) {
-      return;
-    }
-
-    const total = (numericAmount * numericPrice).toFixed(2);
-
-    const newOrder: Order = {
-      id: Date.now(),
-      adId: ad.id,
-      type: ad.type,
-      asset: ad.asset,
-      currency: ad.currency,
-      amount,
-      total,
-      payment: ad.payment,
-      status: "active",
-    };
-
-    setOrders((current) => [newOrder, ...current]);
-
-    navigate("orders");
-  };
-
-  const cancelOrder = (orderId: number) => {
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: "cancelled",
-            }
-          : order,
-      ),
-    );
   };
 
   return (
@@ -333,6 +285,7 @@ function SignedInApp({ session }: { session: Session }) {
               <span className="header-user-label">
                 Signed in as
               </span>
+
               <strong>{email}</strong>
             </div>
 
@@ -360,20 +313,18 @@ function SignedInApp({ session }: { session: Session }) {
 
         {page === "p2p" && (
           <P2PPage
-            advertisements={advertisements}
-            onCreateAdvertisement={createAdvertisement}
-            onCreateOrder={createOrder}
+            session={session}
+            onNavigate={navigate}
           />
         )}
 
         {page === "orders" && (
-          <OrdersPage
-            orders={orders}
-            onCancelOrder={cancelOrder}
-          />
+          <OrdersPage session={session} />
         )}
 
-        {page === "settings" && <SettingsPage />}
+        {page === "settings" && (
+          <SettingsPage session={session} />
+        )}
 
         {page === "help" && <HelpPage />}
       </main>
@@ -396,7 +347,9 @@ function DashboardPage({
       <div className="page-heading">
         <div>
           <span className="eyebrow">Your account</span>
+
           <h1>Dashboard</h1>
+
           <p>
             Manage your balance, P2P activity, orders,
             and account settings.
@@ -415,6 +368,7 @@ function DashboardPage({
             <span className="balance-label">
               Total Balance
             </span>
+
             <div className="balance-value">$0.00</div>
           </div>
 
@@ -504,6 +458,7 @@ function DashboardPage({
 
             <span className="tile-content">
               <strong>P2P Trading</strong>
+
               <small>
                 Buy and sell assets with other users.
               </small>
@@ -521,6 +476,7 @@ function DashboardPage({
 
             <span className="tile-content">
               <strong>Orders</strong>
+
               <small>
                 View active, completed, and cancelled
                 orders.
@@ -539,6 +495,7 @@ function DashboardPage({
 
             <span className="tile-content">
               <strong>Settings</strong>
+
               <small>
                 Manage KYC and payment account.
               </small>
@@ -556,6 +513,7 @@ function DashboardPage({
 
             <span className="tile-content">
               <strong>Help Center</strong>
+
               <small>
                 Get help with your account and
                 transactions.
@@ -766,9 +724,7 @@ function DepositPage() {
           {message && (
             <div className="settings-row">
               <div style={{ width: "100%" }}>
-                <p style={{ margin: 0 }}>
-                  {message}
-                </p>
+                <p style={{ margin: 0 }}>{message}</p>
               </div>
             </div>
           )}
@@ -776,9 +732,7 @@ function DepositPage() {
           {error && (
             <div className="settings-row">
               <div style={{ width: "100%" }}>
-                <p style={{ margin: 0 }}>
-                  {error}
-                </p>
+                <p style={{ margin: 0 }}>{error}</p>
               </div>
             </div>
           )}
@@ -829,12 +783,22 @@ function WithdrawPage() {
   const [amount, setAmount] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const numericAmount = Number(amount);
+  const fee = 0.4;
+
+  const receiveAmount =
+    numericAmount > 0
+      ? Math.max(0, numericAmount - fee)
+      : 0;
+
   return (
     <div className="page-container">
       <div className="page-heading">
         <div>
           <span className="eyebrow">Wallet</span>
+
           <h1>Withdraw</h1>
+
           <p>
             Withdraw available funds from your Malexa
             Wallet.
@@ -849,6 +813,7 @@ function WithdrawPage() {
               <span className="settings-label">
                 Available balance
               </span>
+
               <strong>$0.00</strong>
             </div>
           </div>
@@ -879,11 +844,38 @@ function WithdrawPage() {
             </div>
           </div>
 
+          {numericAmount > 0 && (
+            <>
+              <div className="settings-row">
+                <div>
+                  <span className="settings-label">
+                    Platform fee
+                  </span>
+
+                  <strong>$0.40</strong>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div>
+                  <span className="settings-label">
+                    You receive
+                  </span>
+
+                  <strong>
+                    ${receiveAmount.toFixed(2)}
+                  </strong>
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="settings-row">
             <div>
               <span className="settings-label">
                 Payment account
               </span>
+
               <strong>Not configured</strong>
             </div>
 
@@ -902,7 +894,7 @@ function WithdrawPage() {
               type="button"
               className="primary-button"
               onClick={() => {
-                if (Number(amount) > 0) {
+                if (numericAmount > 0) {
                   setSubmitted(true);
                 }
               }}
@@ -921,10 +913,11 @@ function WithdrawPage() {
             <h3>Withdrawal request created</h3>
 
             <p>
-              Your withdrawal request for ${amount} has
-              been recorded. Balance verification and
-              payment processing will be connected to the
-              backend next.
+              Your withdrawal preview is ${receiveAmount.toFixed(
+                2,
+              )} after the fixed $0.40 platform fee.
+              Final withdrawal processing will be connected
+              to the backend.
             </p>
           </div>
         </section>
@@ -934,22 +927,292 @@ function WithdrawPage() {
 }
 
 function P2PPage({
-  advertisements,
-  onCreateAdvertisement,
-  onCreateOrder,
+  session,
+  onNavigate,
 }: {
-  advertisements: Advertisement[];
-  onCreateAdvertisement: (ad: Advertisement) => void;
-  onCreateOrder: (ad: Advertisement, amount: string) => void;
+  session: Session;
+  onNavigate: (page: Page) => void;
 }) {
   const [tab, setTab] = useState<P2PTab>("buy");
+
+  const [advertisements, setAdvertisements] =
+    useState<Advertisement[]>([]);
+
+  const [paymentAccounts, setPaymentAccounts] =
+    useState<PaymentAccount[]>([]);
+
+  const [kyc, setKyc] = useState<KycInfo>({
+    status: "not_submitted",
+    legalName: null,
+  });
+
+  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showPaymentAccount, setShowPaymentAccount] =
+    useState(false);
+
   const [selectedAd, setSelectedAd] =
     useState<Advertisement | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
+  const loadP2PData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [
+        adsResult,
+        accountsResult,
+        kycResult,
+      ] = await Promise.all([
+        supabase
+          .from("p2p_ads")
+          .select("*")
+          .order("created_at", {
+            ascending: false,
+          }),
+
+        supabase
+          .from("payment_accounts")
+          .select(
+            "id,bank_id,bank_name,account_number,account_holder_name,is_default,is_active",
+          )
+          .eq("is_active", true)
+          .order("is_default", {
+            ascending: false,
+          }),
+
+        supabase
+          .from("kyc_records")
+          .select("status,legal_name")
+          .order("created_at", {
+            ascending: false,
+          })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (adsResult.error) {
+        throw adsResult.error;
+      }
+
+      if (accountsResult.error) {
+        throw accountsResult.error;
+      }
+
+      if (kycResult.error) {
+        throw kycResult.error;
+      }
+
+      const currentKyc: KycInfo = {
+        status: kycResult.data?.status ?? "not_submitted",
+        legalName:
+          kycResult.data?.legal_name ?? null,
+      };
+
+      setKyc(currentKyc);
+
+      setPaymentAccounts(
+        (accountsResult.data ?? []).map((account) => ({
+          id: account.id,
+          bankId: account.bank_id,
+          bankName: account.bank_name ?? "Bank Transfer",
+          accountNumber: account.account_number,
+          accountHolderName:
+            account.account_holder_name ?? "",
+          isDefault: Boolean(account.is_default),
+          isActive: Boolean(account.is_active),
+        })),
+      );
+
+      const currentUserId = session.user.id;
+
+      setAdvertisements(
+        (adsResult.data ?? [])
+          .filter(
+            (ad) =>
+              ad.status === "active" ||
+              ad.user_id === currentUserId,
+          )
+          .map((ad) => ({
+            id: ad.id,
+            userId: ad.user_id,
+            type: ad.side as P2PTab,
+            asset: "USDT",
+            currency: "USD",
+            price: String(ad.price),
+            minLimit: String(ad.min_amount),
+            maxLimit: String(ad.max_amount),
+            availableAmount: String(
+              ad.available_amount,
+            ),
+            payment: ad.bank_name
+              ? ad.bank_name
+              : "Bank Transfer",
+            paymentAccountId:
+              ad.payment_account_id ?? null,
+            paymentTimeLimitMinutes:
+              Number(
+                ad.payment_time_limit_minutes,
+              ) || 30,
+            terms: ad.terms ?? "",
+            status: ad.status,
+            owner:
+              ad.user_id === currentUserId
+                ? "You"
+                : "Malexa User",
+          })),
+      );
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load P2P data.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadP2PData();
+  }, [session.user.id]);
+
+  const verified =
+    kyc.status.toLowerCase() === "verified" &&
+    Boolean(kyc.legalName?.trim());
+
   const matchingAds = advertisements.filter(
-    (ad) => ad.type === tab,
+    (ad) => ad.type === tab && ad.status === "active",
   );
+
+  const createAdvertisement = async (data: {
+    type: P2PTab;
+    price: string;
+    minLimit: string;
+    maxLimit: string;
+    availableAmount: string;
+    paymentAccountId: string;
+    paymentTimeLimitMinutes: number;
+    terms: string;
+  }) => {
+    if (!verified) {
+      setError(
+        "KYC verification is required before using P2P.",
+      );
+      return;
+    }
+
+    setError(null);
+
+    const price = Number(data.price);
+    const minLimit = Number(data.minLimit);
+    const maxLimit = Number(data.maxLimit);
+    const availableAmount = Number(
+      data.availableAmount,
+    );
+
+    if (
+      !Number.isFinite(price) ||
+      price <= 0 ||
+      !Number.isFinite(minLimit) ||
+      minLimit <= 0 ||
+      !Number.isFinite(maxLimit) ||
+      maxLimit < minLimit ||
+      !Number.isFinite(availableAmount) ||
+      availableAmount <= 0
+    ) {
+      setError(
+        "Please enter valid advertisement values.",
+      );
+      return;
+    }
+
+    if (!data.paymentAccountId) {
+      setError(
+        "Please select a verified payment account.",
+      );
+      return;
+    }
+
+    try {
+      const { error: rpcError } =
+        await supabase.rpc("create_p2p_ad", {
+          p_side: data.type,
+          p_asset_id: USDT_ASSET_ID,
+          p_network: "BEP20",
+          p_price: price,
+          p_min_amount: minLimit,
+          p_max_amount: maxLimit,
+          p_available_amount: availableAmount,
+          p_payment_account_id:
+            data.paymentAccountId,
+          p_payment_time_limit_minutes:
+            data.paymentTimeLimitMinutes,
+          p_terms: data.terms.trim() || null,
+        });
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      setShowCreate(false);
+      await loadP2PData();
+    } catch (createError) {
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Unable to create advertisement.",
+      );
+    }
+  };
+
+  const createOrder = async (
+    ad: Advertisement,
+    amount: string,
+    paymentAccountId: string,
+  ) => {
+    if (!verified) {
+      setError(
+        "KYC verification is required before using P2P.",
+      );
+      return;
+    }
+
+    if (!paymentAccountId) {
+      setError(
+        "Please select a payment account.",
+      );
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const { error: rpcError } =
+        await supabase.rpc("create_p2p_order", {
+          p_ad_id: ad.id,
+          p_amount: Number(amount),
+          p_payment_account_id:
+            paymentAccountId,
+        });
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      setSelectedAd(null);
+      await loadP2PData();
+      onNavigate("orders");
+    } catch (orderError) {
+      setError(
+        orderError instanceof Error
+          ? orderError.message
+          : "Unable to create P2P order.",
+      );
+    }
+  };
 
   return (
     <div className="page-container">
@@ -960,7 +1223,7 @@ function P2PPage({
           <h1>P2P Trading</h1>
 
           <p>
-            Buy and sell assets directly with other
+            Buy and sell USDT directly with other
             Malexa Wallet users.
           </p>
         </div>
@@ -968,16 +1231,95 @@ function P2PPage({
         <button
           type="button"
           className="primary-button"
-          onClick={() => setShowCreate(true)}
+          onClick={() => {
+            if (!verified) {
+              setError(
+                "Complete KYC verification before creating or using P2P advertisements.",
+              );
+              return;
+            }
+
+            if (paymentAccounts.length === 0) {
+              setError(
+                "Add a verified bank payment account before creating a P2P advertisement.",
+              );
+              setShowPaymentAccount(true);
+              return;
+            }
+
+            setError(null);
+            setShowCreate(true);
+          }}
         >
           + Create Advertisement
         </button>
       </div>
 
+      {error && (
+        <section className="section-block">
+          <div className="empty-state">
+            <div className="empty-state-icon">!</div>
+
+            <h3>P2P message</h3>
+
+            <p>{error}</p>
+          </div>
+        </section>
+      )}
+
+      {!verified && (
+        <section className="section-block">
+          <div className="empty-state">
+            <div className="empty-state-icon">!</div>
+
+            <h3>KYC verification required</h3>
+
+            <p>
+              Your account must have verified KYC before
+              you can create advertisements or place P2P
+              orders.
+            </p>
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => onNavigate("settings")}
+            >
+              Open Settings
+            </button>
+          </div>
+        </section>
+      )}
+
+      {verified && paymentAccounts.length === 0 && (
+        <section className="section-block">
+          <div className="empty-state">
+            <div className="empty-state-icon">!</div>
+
+            <h3>Payment account required</h3>
+
+            <p>
+              Add your Ethiopian bank account in Settings
+              before using P2P.
+            </p>
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setShowPaymentAccount(true)}
+            >
+              Add Bank Account
+            </button>
+          </div>
+        </section>
+      )}
+
       <div className="tab-bar">
         <button
           type="button"
-          className={tab === "buy" ? "tab active" : "tab"}
+          className={
+            tab === "buy" ? "tab active" : "tab"
+          }
           onClick={() => setTab("buy")}
         >
           Buy
@@ -985,7 +1327,9 @@ function P2PPage({
 
         <button
           type="button"
-          className={tab === "sell" ? "tab active" : "tab"}
+          className={
+            tab === "sell" ? "tab active" : "tab"
+          }
           onClick={() => setTab("sell")}
         >
           Sell
@@ -1015,103 +1359,182 @@ function P2PPage({
         <div className="section-heading">
           <div>
             <h2>
-              {tab === "buy" ? "Buy USDT" : "Sell USDT"}
+              {tab === "buy"
+                ? "Buy USDT"
+                : "Sell USDT"}
             </h2>
 
             <p>
-              {matchingAds.length} advertisement
-              {matchingAds.length === 1 ? "" : "s"} available
+              {loading
+                ? "Loading advertisements..."
+                : `${matchingAds.length} advertisement${
+                    matchingAds.length === 1
+                      ? ""
+                      : "s"
+                  } available`}
             </p>
           </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gap: "14px",
-          }}
-        >
-          {matchingAds.map((ad) => (
-            <div className="settings-card" key={ad.id}>
-              <div className="settings-row">
-                <div>
-                  <span className="settings-label">
-                    Price
-                  </span>
-
-                  <strong>
-                    {ad.currency} {ad.price} / {ad.asset}
-                  </strong>
-                </div>
-
-                <span className="settings-badge">
-                  Online
-                </span>
-              </div>
-
-              <div className="settings-row">
-                <div>
-                  <span className="settings-label">
-                    Limits
-                  </span>
-
-                  <strong>
-                    {ad.currency} {ad.minLimit} -{" "}
-                    {ad.maxLimit}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="settings-row">
-                <div>
-                  <span className="settings-label">
-                    Payment
-                  </span>
-
-                  <strong>{ad.payment}</strong>
-                </div>
-              </div>
-
-              <div className="settings-row">
-                <div>
-                  <span className="settings-label">
-                    Advertiser
-                  </span>
-
-                  <strong>{ad.owner}</strong>
-                </div>
-
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={() => setSelectedAd(ad)}
-                >
-                  {tab === "buy" ? "Buy" : "Sell"}
-                </button>
-              </div>
+        {matchingAds.length === 0 && !loading ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              ⇄
             </div>
-          ))}
-        </div>
+
+            <h3>No advertisements available</h3>
+
+            <p>
+              There are currently no active{" "}
+              {tab === "buy" ? "buy" : "sell"}{" "}
+              advertisements.
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gap: "14px",
+            }}
+          >
+            {matchingAds.map((ad) => (
+              <div
+                className="settings-card"
+                key={ad.id}
+              >
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Price
+                    </span>
+
+                    <strong>
+                      {ad.currency} {ad.price} /{" "}
+                      {ad.asset}
+                    </strong>
+                  </div>
+
+                  <span className="settings-badge">
+                    Online
+                  </span>
+                </div>
+
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Limits
+                    </span>
+
+                    <strong>
+                      {ad.currency}{" "}
+                      {ad.minLimit} -{" "}
+                      {ad.maxLimit}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Available
+                    </span>
+
+                    <strong>
+                      {ad.availableAmount} USDT
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Payment
+                    </span>
+
+                    <strong>
+                      {ad.payment}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div>
+                    <span className="settings-label">
+                      Advertiser
+                    </span>
+
+                    <strong>{ad.owner}</strong>
+                  </div>
+
+                  {ad.userId === session.user.id ? (
+                    <span className="settings-badge">
+                      Your Ad
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() => {
+                        if (!verified) {
+                          setError(
+                            "KYC verification is required before using P2P.",
+                          );
+                          return;
+                        }
+
+                        if (
+                          paymentAccounts.length === 0
+                        ) {
+                          setError(
+                            "Add a bank payment account before placing a P2P order.",
+                          );
+                          setShowPaymentAccount(true);
+                          return;
+                        }
+
+                        setSelectedAd(ad);
+                      }}
+                    >
+                      {tab === "buy"
+                        ? "Buy"
+                        : "Sell"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {showCreate && (
         <CreateAdvertisement
           defaultType={tab}
+          paymentAccounts={paymentAccounts}
           onClose={() => setShowCreate(false)}
-          onCreate={(ad) => {
-            onCreateAdvertisement(ad);
-            setShowCreate(false);
-          }}
+          onCreate={createAdvertisement}
         />
       )}
 
       {selectedAd && (
         <TradeAdvertisement
           ad={selectedAd}
+          paymentAccounts={paymentAccounts}
           onClose={() => setSelectedAd(null)}
-          onTrade={(amount) => {
-            onCreateOrder(selectedAd, amount);
-            setSelectedAd(null);
+          onTrade={createOrder}
+        />
+      )}
+
+      {showPaymentAccount && (
+        <PaymentAccountModal
+          session={session}
+          kyc={kyc}
+          onClose={() =>
+            setShowPaymentAccount(false)
+          }
+          onSaved={async () => {
+            setShowPaymentAccount(false);
+            await loadP2PData();
           }}
         />
       )}
@@ -1121,37 +1544,76 @@ function P2PPage({
 
 function CreateAdvertisement({
   defaultType,
+  paymentAccounts,
   onClose,
   onCreate,
 }: {
   defaultType: P2PTab;
+  paymentAccounts: PaymentAccount[];
   onClose: () => void;
-  onCreate: (ad: Advertisement) => void;
+  onCreate: (data: {
+    type: P2PTab;
+    price: string;
+    minLimit: string;
+    maxLimit: string;
+    availableAmount: string;
+    paymentAccountId: string;
+    paymentTimeLimitMinutes: number;
+    terms: string;
+  }) => Promise<void>;
 }) {
-  const [type, setType] = useState<P2PTab>(defaultType);
+  const [type, setType] =
+    useState<P2PTab>(defaultType);
+
   const [price, setPrice] = useState("");
   const [minLimit, setMinLimit] = useState("");
   const [maxLimit, setMaxLimit] = useState("");
-  const [payment, setPayment] = useState("Bank Transfer");
+  const [availableAmount, setAvailableAmount] =
+    useState("");
 
-  const submit = () => {
-    if (!price || !minLimit || !maxLimit) {
+  const [paymentAccountId, setPaymentAccountId] =
+    useState(
+      paymentAccounts.find(
+        (account) => account.isDefault,
+      )?.id ??
+        paymentAccounts[0]?.id ??
+        "",
+    );
+
+  const [paymentTimeLimit, setPaymentTimeLimit] =
+    useState("30");
+
+  const [terms, setTerms] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (
+      !price ||
+      !minLimit ||
+      !maxLimit ||
+      !availableAmount ||
+      !paymentAccountId
+    ) {
       return;
     }
 
-    const ad: Advertisement = {
-      id: Date.now(),
-      type,
-      asset: "USDT",
-      currency: "USD",
-      price,
-      minLimit,
-      maxLimit,
-      payment,
-      owner: "You",
-    };
+    setSaving(true);
 
-    onCreate(ad);
+    try {
+      await onCreate({
+        type,
+        price,
+        minLimit,
+        maxLimit,
+        availableAmount,
+        paymentAccountId,
+        paymentTimeLimitMinutes:
+          Number(paymentTimeLimit) || 30,
+        terms,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -1174,7 +1636,11 @@ function CreateAdvertisement({
           <div className="tab-bar">
             <button
               type="button"
-              className={type === "buy" ? "tab active" : "tab"}
+              className={
+                type === "buy"
+                  ? "tab active"
+                  : "tab"
+              }
               onClick={() => setType("buy")}
             >
               Buy
@@ -1182,7 +1648,11 @@ function CreateAdvertisement({
 
             <button
               type="button"
-              className={type === "sell" ? "tab active" : "tab"}
+              className={
+                type === "sell"
+                  ? "tab active"
+                  : "tab"
+              }
               onClick={() => setType("sell")}
             >
               Sell
@@ -1190,6 +1660,7 @@ function CreateAdvertisement({
           </div>
 
           <label>Asset</label>
+
           <input
             value="USDT"
             disabled
@@ -1202,15 +1673,33 @@ function CreateAdvertisement({
             }}
           />
 
-          <label>Price (USD)</label>
+          <label>Network</label>
+
+          <input
+            value="BEP-20"
+            disabled
+            style={{
+              minHeight: "45px",
+              padding: "10px 12px",
+              border: "1px solid #d1d5db",
+              borderRadius: "10px",
+              background: "#f3f4f6",
+            }}
+          />
+
+          <label>Price (USD per USDT)</label>
+
           <input
             value={price}
-            onChange={(event) => setPrice(event.target.value)}
+            onChange={(event) =>
+              setPrice(event.target.value)
+            }
             inputMode="decimal"
             placeholder="Example: 1.02"
           />
 
-          <label>Minimum limit</label>
+          <label>Minimum USDT</label>
+
           <input
             value={minLimit}
             onChange={(event) =>
@@ -1220,7 +1709,8 @@ function CreateAdvertisement({
             placeholder="Example: 10"
           />
 
-          <label>Maximum limit</label>
+          <label>Maximum USDT</label>
+
           <input
             value={maxLimit}
             onChange={(event) =>
@@ -1230,10 +1720,28 @@ function CreateAdvertisement({
             placeholder="Example: 1000"
           />
 
-          <label>Payment method</label>
+          <label>Total available USDT</label>
+
+          <input
+            value={availableAmount}
+            onChange={(event) =>
+              setAvailableAmount(
+                event.target.value,
+              )
+            }
+            inputMode="decimal"
+            placeholder="Example: 500"
+          />
+
+          <label>Payment account</label>
+
           <select
-            value={payment}
-            onChange={(event) => setPayment(event.target.value)}
+            value={paymentAccountId}
+            onChange={(event) =>
+              setPaymentAccountId(
+                event.target.value,
+              )
+            }
             style={{
               minHeight: "45px",
               padding: "10px 12px",
@@ -1242,9 +1750,61 @@ function CreateAdvertisement({
               background: "#ffffff",
             }}
           >
-            <option>Bank Transfer</option>
-            <option>Mobile Money</option>
+            <option value="">
+              Select bank account
+            </option>
+
+            {paymentAccounts.map((account) => (
+              <option
+                key={account.id}
+                value={account.id}
+              >
+                {account.bankName} —{" "}
+                {account.accountNumber}
+              </option>
+            ))}
           </select>
+
+          <label>Payment time limit</label>
+
+          <select
+            value={paymentTimeLimit}
+            onChange={(event) =>
+              setPaymentTimeLimit(
+                event.target.value,
+              )
+            }
+            style={{
+              minHeight: "45px",
+              padding: "10px 12px",
+              border: "1px solid #d1d5db",
+              borderRadius: "10px",
+              background: "#ffffff",
+            }}
+          >
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">60 minutes</option>
+          </select>
+
+          <label>Terms (optional)</label>
+
+          <textarea
+            value={terms}
+            onChange={(event) =>
+              setTerms(event.target.value)
+            }
+            placeholder="Optional trading terms"
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              border: "1px solid #d1d5db",
+              borderRadius: "10px",
+              resize: "vertical",
+            }}
+          />
 
           <div
             style={{
@@ -1258,6 +1818,7 @@ function CreateAdvertisement({
               className="secondary-button"
               onClick={onClose}
               style={{ flex: 1 }}
+              disabled={saving}
             >
               Cancel
             </button>
@@ -1265,10 +1826,13 @@ function CreateAdvertisement({
             <button
               type="button"
               className="primary-button"
-              onClick={submit}
+              onClick={() => void submit()}
               style={{ flex: 1 }}
+              disabled={saving}
             >
-              Publish Ad
+              {saving
+                ? "Publishing..."
+                : "Publish Ad"}
             </button>
           </div>
         </div>
@@ -1279,43 +1843,143 @@ function CreateAdvertisement({
 
 function TradeAdvertisement({
   ad,
+  paymentAccounts,
   onClose,
   onTrade,
 }: {
   ad: Advertisement;
+  paymentAccounts: PaymentAccount[];
   onClose: () => void;
-  onTrade: (amount: string) => void;
+  onTrade: (
+    ad: Advertisement,
+    amount: string,
+    paymentAccountId: string,
+  ) => Promise<void>;
 }) {
   const [amount, setAmount] = useState("");
 
-  const total = Number(amount) * Number(ad.price);
+  const [paymentAccountId, setPaymentAccountId] =
+    useState(
+      paymentAccounts.find(
+        (account) => account.isDefault,
+      )?.id ??
+        paymentAccounts[0]?.id ??
+        "",
+    );
+
+  const [saving, setSaving] = useState(false);
+
+  const numericAmount = Number(amount);
+  const numericPrice = Number(ad.price);
+
+  const total =
+    numericAmount * numericPrice;
+
+  const minAmount =
+    Number(ad.minLimit) / numericPrice;
+
+  const maxAmount =
+    Math.min(
+      Number(ad.maxLimit) / numericPrice,
+      Number(ad.availableAmount),
+    );
 
   const validAmount =
-    Number(amount) > 0 &&
-    Number(amount) >=
-      Number(ad.minLimit) / Number(ad.price) &&
-    Number(amount) <=
-      Number(ad.maxLimit) / Number(ad.price);
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0 &&
+    Number.isFinite(numericPrice) &&
+    numericPrice > 0 &&
+    numericAmount >= minAmount &&
+    numericAmount <= maxAmount &&
+    Boolean(paymentAccountId);
+
+  const submit = async () => {
+    if (!validAmount) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await onTrade(
+        ad,
+        amount,
+        paymentAccountId,
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="auth-overlay">
       <div className="auth-card">
         <h2>
-          {ad.type === "buy" ? "Buy USDT" : "Sell USDT"}
+          {ad.type === "buy"
+            ? "Buy USDT"
+            : "Sell USDT"}
         </h2>
 
         <p>
-          Price: {ad.currency} {ad.price} / {ad.asset}
+          Price: {ad.currency} {ad.price} /{" "}
+          {ad.asset}
+        </p>
+
+        <p>
+          Available: {ad.availableAmount} USDT
         </p>
 
         <label>Amount in USDT</label>
 
         <input
           value={amount}
-          onChange={(event) => setAmount(event.target.value)}
+          onChange={(event) =>
+            setAmount(event.target.value)
+          }
           inputMode="decimal"
           placeholder="Enter USDT amount"
         />
+
+        <label
+          style={{
+            display: "block",
+            marginTop: "15px",
+          }}
+        >
+          Your payment account
+        </label>
+
+        <select
+          value={paymentAccountId}
+          onChange={(event) =>
+            setPaymentAccountId(
+              event.target.value,
+            )
+          }
+          style={{
+            width: "100%",
+            minHeight: "45px",
+            marginTop: "7px",
+            padding: "10px 12px",
+            border: "1px solid #d1d5db",
+            borderRadius: "10px",
+            background: "#ffffff",
+          }}
+        >
+          <option value="">
+            Select bank account
+          </option>
+
+          {paymentAccounts.map((account) => (
+            <option
+              key={account.id}
+              value={account.id}
+            >
+              {account.bankName} —{" "}
+              {account.accountNumber}
+            </option>
+          ))}
+        </select>
 
         <div
           style={{
@@ -1325,7 +1989,9 @@ function TradeAdvertisement({
             background: "#f9fafb",
           }}
         >
-          <span className="settings-label">Total</span>
+          <span className="settings-label">
+            Total
+          </span>
 
           <strong style={{ fontSize: "20px" }}>
             USD{" "}
@@ -1347,6 +2013,7 @@ function TradeAdvertisement({
             className="secondary-button"
             onClick={onClose}
             style={{ flex: 1 }}
+            disabled={saving}
           >
             Cancel
           </button>
@@ -1354,18 +2021,19 @@ function TradeAdvertisement({
           <button
             type="button"
             className="primary-button"
-            disabled={!validAmount}
-            onClick={() => {
-              if (validAmount) {
-                onTrade(amount);
-              }
-            }}
+            disabled={!validAmount || saving}
+            onClick={() => void submit()}
             style={{
               flex: 1,
-              opacity: validAmount ? 1 : 0.5,
+              opacity:
+                validAmount && !saving ? 1 : 0.5,
             }}
           >
-            {ad.type === "buy" ? "Buy Now" : "Sell Now"}
+            {saving
+              ? "Creating..."
+              : ad.type === "buy"
+                ? "Buy Now"
+                : "Sell Now"}
           </button>
         </div>
 
@@ -1383,13 +2051,254 @@ function TradeAdvertisement({
 }
 
 function OrdersPage({
-  orders,
-  onCancelOrder,
+  session,
 }: {
-  orders: Order[];
-  onCancelOrder: (orderId: number) => void;
+  session: Session;
 }) {
-  const [tab, setTab] = useState<OrderTab>("active");
+  const [tab, setTab] =
+    useState<OrderTab>("active");
+
+  const [orders, setOrders] =
+    useState<Order[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [workingOrderId, setWorkingOrderId] =
+    useState<string | null>(null);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: orderError } =
+        await supabase
+          .from("p2p_orders")
+          .select("*")
+          .or(
+            `buyer_id.eq.${session.user.id},seller_id.eq.${session.user.id}`,
+          )
+          .order("created_at", {
+            ascending: false,
+          });
+
+      if (orderError) {
+        throw orderError;
+      }
+
+      const orderRows = data ?? [];
+
+      const adIds = Array.from(
+        new Set(
+          orderRows.map(
+            (order) => order.ad_id,
+          ),
+        ),
+      );
+
+      let adMap = new Map<
+        string,
+        Advertisement
+      >();
+
+      if (adIds.length > 0) {
+        const { data: ads, error: adsError } =
+          await supabase
+            .from("p2p_ads")
+            .select("*")
+            .in("id", adIds);
+
+        if (adsError) {
+          throw adsError;
+        }
+
+        adMap = new Map(
+          (ads ?? []).map((ad) => [
+            ad.id,
+            {
+              id: ad.id,
+              userId: ad.user_id,
+              type: ad.side as P2PTab,
+              asset: "USDT",
+              currency: "USD",
+              price: String(ad.price),
+              minLimit: String(
+                ad.min_amount,
+              ),
+              maxLimit: String(
+                ad.max_amount,
+              ),
+              availableAmount: String(
+                ad.available_amount,
+              ),
+              payment: "Bank Transfer",
+              paymentAccountId:
+                ad.payment_account_id ??
+                null,
+              paymentTimeLimitMinutes:
+                Number(
+                  ad.payment_time_limit_minutes,
+                ) || 30,
+              terms: ad.terms ?? "",
+              status: ad.status,
+              owner: "Malexa User",
+            },
+          ]),
+        );
+      }
+
+      const mappedOrders: Order[] =
+        orderRows.map((order) => {
+          const ad = adMap.get(
+            order.ad_id,
+          );
+
+          const rawStatus =
+            String(order.status);
+
+          let status: OrderTab =
+            "active";
+
+          if (rawStatus === "completed") {
+            status = "completed";
+          } else if (
+            rawStatus === "cancelled"
+          ) {
+            status = "cancelled";
+          }
+
+          return {
+            id: order.id,
+            adId: order.ad_id,
+            type:
+              ad?.type ??
+              "buy",
+            asset: "USDT",
+            currency: "USD",
+            amount: String(order.amount),
+            total: String(
+              order.fiat_amount,
+            ),
+            payment:
+              "Bank Transfer",
+            status,
+            rawStatus,
+            paymentReference:
+              order.payment_reference ??
+              null,
+            buyerId:
+              order.buyer_id,
+            sellerId:
+              order.seller_id,
+            buyerPaymentAccountId:
+              order.buyer_payment_account_id ??
+              null,
+            sellerPaymentAccountId:
+              order.seller_payment_account_id ??
+              null,
+            createdAt:
+              order.created_at,
+          };
+        });
+
+      setOrders(mappedOrders);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load orders.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadOrders();
+  }, [session.user.id]);
+
+  const runOrderAction = async (
+    orderId: string,
+    action:
+      | "paid"
+      | "release"
+      | "cancel",
+  ) => {
+    setWorkingOrderId(orderId);
+    setError(null);
+
+    try {
+      if (action === "paid") {
+        const reference = window.prompt(
+          "Enter your payment reference (optional):",
+        );
+
+        const { error: rpcError } =
+          await supabase.rpc(
+            "mark_p2p_order_paid",
+            {
+              p_order_id: orderId,
+              p_payment_reference:
+                reference?.trim() || null,
+            },
+          );
+
+        if (rpcError) {
+          throw rpcError;
+        }
+      }
+
+      if (action === "release") {
+        const { error: rpcError } =
+          await supabase.rpc(
+            "release_p2p_order",
+            {
+              p_order_id: orderId,
+            },
+          );
+
+        if (rpcError) {
+          throw rpcError;
+        }
+      }
+
+      if (action === "cancel") {
+        const reason = window.prompt(
+          "Cancellation reason:",
+          "Cancelled by user",
+        );
+
+        const { error: rpcError } =
+          await supabase.rpc(
+            "cancel_p2p_order",
+            {
+              p_order_id: orderId,
+              p_reason:
+                reason?.trim() ||
+                "Cancelled by user",
+            },
+          );
+
+        if (rpcError) {
+          throw rpcError;
+        }
+      }
+
+      await loadOrders();
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error
+          ? actionError.message
+          : "Unable to update the order.",
+      );
+    } finally {
+      setWorkingOrderId(null);
+    }
+  };
 
   const visibleOrders = orders.filter(
     (order) => order.status === tab,
@@ -1399,7 +2308,9 @@ function OrdersPage({
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Trading history</span>
+          <span className="eyebrow">
+            Trading history
+          </span>
 
           <h1>Orders</h1>
 
@@ -1410,11 +2321,27 @@ function OrdersPage({
         </div>
       </div>
 
+      {error && (
+        <section className="section-block">
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              !
+            </div>
+
+            <h3>Order message</h3>
+
+            <p>{error}</p>
+          </div>
+        </section>
+      )}
+
       <div className="tab-bar">
         <button
           type="button"
           className={
-            tab === "active" ? "tab active" : "tab"
+            tab === "active"
+              ? "tab active"
+              : "tab"
           }
           onClick={() => setTab("active")}
         >
@@ -1424,9 +2351,13 @@ function OrdersPage({
         <button
           type="button"
           className={
-            tab === "completed" ? "tab active" : "tab"
+            tab === "completed"
+              ? "tab active"
+              : "tab"
           }
-          onClick={() => setTab("completed")}
+          onClick={() =>
+            setTab("completed")
+          }
         >
           Completed
         </button>
@@ -1434,18 +2365,36 @@ function OrdersPage({
         <button
           type="button"
           className={
-            tab === "cancelled" ? "tab active" : "tab"
+            tab === "cancelled"
+              ? "tab active"
+              : "tab"
           }
-          onClick={() => setTab("cancelled")}
+          onClick={() =>
+            setTab("cancelled")
+          }
         >
           Cancelled
         </button>
       </div>
 
       <section className="section-block">
-        {visibleOrders.length === 0 ? (
+        {loading ? (
           <div className="empty-state">
-            <div className="empty-state-icon">▤</div>
+            <div className="empty-state-icon">
+              …
+            </div>
+
+            <h3>Loading orders</h3>
+
+            <p>
+              Loading your P2P orders...
+            </p>
+          </div>
+        ) : visibleOrders.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              ▤
+            </div>
 
             <h3>
               {tab === "active"
@@ -1470,75 +2419,189 @@ function OrdersPage({
               gap: "14px",
             }}
           >
-            {visibleOrders.map((order) => (
-              <div
-                className="settings-card"
-                key={order.id}
-              >
-                <div className="settings-row">
-                  <div>
-                    <span className="settings-label">
-                      Order
-                    </span>
+            {visibleOrders.map((order) => {
+              const isBuyer =
+                order.buyerId ===
+                session.user.id;
 
-                    <strong>#{order.id}</strong>
+              const isSeller =
+                order.sellerId ===
+                session.user.id;
+
+              const working =
+                workingOrderId ===
+                order.id;
+
+              return (
+                <div
+                  className="settings-card"
+                  key={order.id}
+                >
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Order
+                      </span>
+
+                      <strong>
+                        #{order.id}
+                      </strong>
+                    </div>
+
+                    <span className="settings-badge">
+                      {order.rawStatus}
+                    </span>
                   </div>
 
-                  <span className="settings-badge">
-                    {order.status}
-                  </span>
-                </div>
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Trade
+                      </span>
 
-                <div className="settings-row">
-                  <div>
-                    <span className="settings-label">
-                      Trade
-                    </span>
-
-                    <strong>
-                      {order.type === "buy"
-                        ? "Buy"
-                        : "Sell"}{" "}
-                      {order.amount} {order.asset}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="settings-row">
-                  <div>
-                    <span className="settings-label">
-                      Total
-                    </span>
-
-                    <strong>
-                      {order.currency} {order.total}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="settings-row">
-                  <div>
-                    <span className="settings-label">
-                      Payment
-                    </span>
-
-                    <strong>{order.payment}</strong>
+                      <strong>
+                        {order.type ===
+                        "buy"
+                          ? "Buy"
+                          : "Sell"}{" "}
+                        {order.amount}{" "}
+                        {order.asset}
+                      </strong>
+                    </div>
                   </div>
 
-                  {order.status === "active" && (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() =>
-                        onCancelOrder(order.id)
-                      }
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Total
+                      </span>
+
+                      <strong>
+                        {order.currency}{" "}
+                        {Number(
+                          order.total,
+                        ).toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Payment
+                      </span>
+
+                      <strong>
+                        {order.payment}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {order.paymentReference && (
+                    <div className="settings-row">
+                      <div>
+                        <span className="settings-label">
+                          Payment reference
+                        </span>
+
+                        <strong>
+                          {
+                            order.paymentReference
+                          }
+                        </strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {order.rawStatus ===
+                    "pending_payment" &&
+                    isBuyer && (
+                      <div
+                        className="settings-row"
+                        style={{
+                          justifyContent:
+                            "flex-end",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={working}
+                          onClick={() =>
+                            void runOrderAction(
+                              order.id,
+                              "paid",
+                            )
+                          }
+                        >
+                          {working
+                            ? "Updating..."
+                            : "I Have Paid"}
+                        </button>
+                      </div>
+                    )}
+
+                  {order.rawStatus ===
+                    "paid" &&
+                    isSeller && (
+                      <div
+                        className="settings-row"
+                        style={{
+                          justifyContent:
+                            "flex-end",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={working}
+                          onClick={() =>
+                            void runOrderAction(
+                              order.id,
+                              "release",
+                            )
+                          }
+                        >
+                          {working
+                            ? "Releasing..."
+                            : "Release USDT"}
+                        </button>
+                      </div>
+                    )}
+
+                  {[
+                    "pending_payment",
+                    "paid",
+                  ].includes(
+                    order.rawStatus,
+                  ) && (
+                    <div
+                      className="settings-row"
+                      style={{
+                        justifyContent:
+                          "flex-end",
+                      }}
                     >
-                      Cancel Order
-                    </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={working}
+                        onClick={() =>
+                          void runOrderAction(
+                            order.id,
+                            "cancel",
+                          )
+                        }
+                      >
+                        {working
+                          ? "Cancelling..."
+                          : "Cancel Order"}
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -1546,7 +2609,11 @@ function OrdersPage({
   );
 }
 
-function SettingsPage() {
+function SettingsPage({
+  session,
+}: {
+  session: Session;
+}) {
   const [depositAddress, setDepositAddress] =
     useState<string | null>(null);
 
@@ -1559,16 +2626,114 @@ function SettingsPage() {
   const [addressError, setAddressError] =
     useState<string | null>(null);
 
+  const [kyc, setKyc] = useState<KycInfo>({
+    status: "not_submitted",
+    legalName: null,
+  });
+
+  const [paymentAccounts, setPaymentAccounts] =
+    useState<PaymentAccount[]>([]);
+
+  const [loadingAccounts, setLoadingAccounts] =
+    useState(true);
+
+  const [showPaymentAccount, setShowPaymentAccount] =
+    useState(false);
+
+  const [showKycMessage, setShowKycMessage] =
+    useState(false);
+
+  const loadSettings = async () => {
+    setLoadingAccounts(true);
+
+    try {
+      const [
+        kycResult,
+        accountsResult,
+      ] = await Promise.all([
+        supabase
+          .from("kyc_records")
+          .select("status,legal_name")
+          .order("created_at", {
+            ascending: false,
+          })
+          .limit(1)
+          .maybeSingle(),
+
+        supabase
+          .from("payment_accounts")
+          .select(
+            "id,bank_id,bank_name,account_number,account_holder_name,is_default,is_active",
+          )
+          .eq("is_active", true)
+          .order("is_default", {
+            ascending: false,
+          }),
+      ]);
+
+      if (kycResult.error) {
+        throw kycResult.error;
+      }
+
+      if (accountsResult.error) {
+        throw accountsResult.error;
+      }
+
+      setKyc({
+        status:
+          kycResult.data?.status ??
+          "not_submitted",
+        legalName:
+          kycResult.data?.legal_name ??
+          null,
+      });
+
+      setPaymentAccounts(
+        (accountsResult.data ?? []).map(
+          (account) => ({
+            id: account.id,
+            bankId: account.bank_id,
+            bankName:
+              account.bank_name ??
+              "Bank Transfer",
+            accountNumber:
+              account.account_number,
+            accountHolderName:
+              account.account_holder_name ??
+              "",
+            isDefault: Boolean(
+              account.is_default,
+            ),
+            isActive: Boolean(
+              account.is_active,
+            ),
+          }),
+        ),
+      );
+    } catch {
+      setPaymentAccounts([]);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadSettings();
+  }, [session.user.id]);
+
   const loadDepositAddress = async () => {
     setAddressLoading(true);
     setAddressMessage(null);
     setAddressError(null);
 
     try {
-      const result = await requestDepositAddress();
+      const result =
+        await requestDepositAddress();
 
       if (result.address) {
-        setDepositAddress(result.address);
+        setDepositAddress(
+          result.address,
+        );
 
         setAddressMessage(
           "Your BEP20 deposit address is ready.",
@@ -1587,7 +2752,9 @@ function SettingsPage() {
       }
 
       if (result.error) {
-        throw new Error(result.error);
+        throw new Error(
+          result.error,
+        );
       }
 
       setAddressMessage(
@@ -1603,6 +2770,13 @@ function SettingsPage() {
       setAddressLoading(false);
     }
   };
+
+  const verified =
+    kyc.status.toLowerCase() ===
+      "verified" &&
+    Boolean(
+      kyc.legalName?.trim(),
+    );
 
   return (
     <div className="page-container">
@@ -1625,7 +2799,10 @@ function SettingsPage() {
         <div className="section-heading">
           <div>
             <h2>Profile</h2>
-            <p>Your Malexa Wallet account</p>
+
+            <p>
+              Your Malexa Wallet account
+            </p>
           </div>
         </div>
 
@@ -1652,8 +2829,7 @@ function SettingsPage() {
             <h2>KYC Verification</h2>
 
             <p>
-              Complete verification to use features
-              that require identity verification.
+              KYC is required before using P2P.
             </p>
           </div>
         </div>
@@ -1665,12 +2841,53 @@ function SettingsPage() {
                 Verification status
               </span>
 
-              <strong>Not submitted</strong>
+              <strong>
+                {formatKycStatus(
+                  kyc.status,
+                )}
+              </strong>
+            </div>
+
+            <span className="settings-badge">
+              {verified
+                ? "Verified"
+                : formatKycStatus(
+                    kyc.status,
+                  )}
+            </span>
+          </div>
+
+          {verified &&
+            kyc.legalName && (
+              <div className="settings-row">
+                <div>
+                  <span className="settings-label">
+                    Verified legal name
+                  </span>
+
+                  <strong>
+                    {kyc.legalName}
+                  </strong>
+                </div>
+              </div>
+            )}
+
+          <div className="settings-row">
+            <div>
+              <p style={{ margin: 0 }}>
+                KYC submission and review are
+                managed by the Malexa backend.
+              </p>
             </div>
 
             <button
               type="button"
               className="secondary-button"
+              onClick={() =>
+                setShowKycMessage(
+                  true,
+                )
+              }
             >
               Open KYC
             </button>
@@ -1684,30 +2901,225 @@ function SettingsPage() {
             <h2>Payment Account</h2>
 
             <p>
-              Save the payment account you use for P2P
-              transactions.
+              Bank accounts are used for P2P
+              transactions only.
             </p>
           </div>
         </div>
 
-        <div className="settings-card">
-          <div className="settings-row">
-            <div>
-              <span className="settings-label">
-                Saved payment account
-              </span>
-
-              <strong>Not configured</strong>
+        {loadingAccounts ? (
+          <div className="settings-card">
+            <div className="settings-row">
+              <div>
+                <strong>
+                  Loading payment accounts...
+                </strong>
+              </div>
             </div>
+          </div>
+        ) : paymentAccounts.length === 0 ? (
+          <div className="settings-card">
+            <div className="settings-row">
+              <div>
+                <span className="settings-label">
+                  Saved payment account
+                </span>
+
+                <strong>
+                  Not configured
+                </strong>
+              </div>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  setShowPaymentAccount(
+                    true,
+                  )
+                }
+              >
+                Add Account
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gap: "14px",
+            }}
+          >
+            {paymentAccounts.map(
+              (account) => (
+                <div
+                  className="settings-card"
+                  key={account.id}
+                >
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Bank
+                      </span>
+
+                      <strong>
+                        {account.bankName}
+                      </strong>
+                    </div>
+
+                    {account.isDefault && (
+                      <span className="settings-badge">
+                        Default
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Account number
+                      </span>
+
+                      <strong>
+                        {
+                          account.accountNumber
+                        }
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="settings-row">
+                    <div>
+                      <span className="settings-label">
+                        Account holder
+                      </span>
+
+                      <strong>
+                        {
+                          account.accountHolderName
+                        }
+                      </strong>
+
+                      <small
+                        style={{
+                          display:
+                            "block",
+                          marginTop:
+                            "5px",
+                        }}
+                      >
+                        Taken from your
+                        verified KYC legal
+                        name.
+                      </small>
+                    </div>
+                  </div>
+
+                  <div
+                    className="settings-row"
+                    style={{
+                      justifyContent:
+                        "flex-end",
+                    }}
+                  >
+                    {!account.isDefault && (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={async () => {
+                          const {
+                            error,
+                          } =
+                            await supabase.rpc(
+                              "set_default_payment_account",
+                              {
+                                p_account_id:
+                                  account.id,
+                              },
+                            );
+
+                          if (error) {
+                            window.alert(
+                              error.message,
+                            );
+                            return;
+                          }
+
+                          await loadSettings();
+                        }}
+                      >
+                        Make Default
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        window.alert(
+                          "To change the account, use Add Account and choose the updated bank account.",
+                        )
+                      }
+                    >
+                      Add Another
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={async () => {
+                        const confirmed =
+                          window.confirm(
+                            "Delete this payment account?",
+                          );
+
+                        if (
+                          !confirmed
+                        ) {
+                          return;
+                        }
+
+                        const {
+                          error,
+                        } =
+                          await supabase.rpc(
+                            "delete_payment_account",
+                            {
+                              p_account_id:
+                                account.id,
+                            },
+                          );
+
+                        if (error) {
+                          window.alert(
+                            error.message,
+                          );
+                          return;
+                        }
+
+                        await loadSettings();
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ),
+            )}
 
             <button
               type="button"
-              className="secondary-button"
+              className="primary-button"
+              onClick={() =>
+                setShowPaymentAccount(
+                  true,
+                )
+              }
             >
-              Add Account
+              + Add Bank Account
             </button>
           </div>
-        </div>
+        )}
       </section>
 
       <section className="section-block">
@@ -1729,7 +3141,9 @@ function SettingsPage() {
                 Network
               </span>
 
-              <strong>BNB Smart Chain (BEP20)</strong>
+              <strong>
+                BNB Smart Chain (BEP20)
+              </strong>
             </div>
 
             <span className="settings-badge">
@@ -1737,7 +3151,7 @@ function SettingsPage() {
             </span>
           </div>
 
-          {depositAddress ? (
+          {depositAddress && (
             <div className="settings-row">
               <div
                 style={{
@@ -1752,12 +3166,18 @@ function SettingsPage() {
                   style={{
                     marginTop: "8px",
                     padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "10px",
-                    background: "#f9fafb",
-                    wordBreak: "break-all",
-                    fontFamily: "monospace",
-                    fontSize: "13px",
+                    border:
+                      "1px solid #d1d5db",
+                    borderRadius:
+                      "10px",
+                    background:
+                      "#f9fafb",
+                    wordBreak:
+                      "break-all",
+                    fontFamily:
+                      "monospace",
+                    fontSize:
+                      "13px",
                   }}
                 >
                   {depositAddress}
@@ -1765,16 +3185,19 @@ function SettingsPage() {
 
                 <small
                   style={{
-                    display: "block",
-                    marginTop: "8px",
+                    display:
+                      "block",
+                    marginTop:
+                      "8px",
                   }}
                 >
-                  Send only USDT on the BEP20 network to
-                  this address.
+                  Send only USDT on the
+                  BEP20 network to this
+                  address.
                 </small>
               </div>
             </div>
-          ) : null}
+          )}
 
           {addressMessage && (
             <div
@@ -1813,16 +3236,24 @@ function SettingsPage() {
           <div
             className="settings-row"
             style={{
-              justifyContent: "flex-end",
+              justifyContent:
+                "flex-end",
             }}
           >
             <button
               type="button"
               className="primary-button"
-              onClick={loadDepositAddress}
-              disabled={addressLoading}
+              onClick={
+                loadDepositAddress
+              }
+              disabled={
+                addressLoading
+              }
               style={{
-                opacity: addressLoading ? 0.6 : 1,
+                opacity:
+                  addressLoading
+                    ? 0.6
+                    : 1,
               }}
             >
               {addressLoading
@@ -1834,6 +3265,342 @@ function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {showPaymentAccount && (
+        <PaymentAccountModal
+          session={session}
+          kyc={kyc}
+          onClose={() =>
+            setShowPaymentAccount(
+              false,
+            )
+          }
+          onSaved={async () => {
+            setShowPaymentAccount(
+              false,
+            );
+
+            await loadSettings();
+          }}
+        />
+      )}
+
+      {showKycMessage && (
+        <div className="auth-overlay">
+          <div className="auth-card">
+            <h2>KYC Verification</h2>
+
+            <p>
+              KYC submission and review are
+              handled by the Malexa verification
+              system.
+            </p>
+
+            <p>
+              Current status:{" "}
+              <strong>
+                {formatKycStatus(
+                  kyc.status,
+                )}
+              </strong>
+            </p>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() =>
+                setShowKycMessage(
+                  false,
+                )
+              }
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentAccountModal({
+  session,
+  kyc,
+  onClose,
+  onSaved,
+}: {
+  session: Session;
+  kyc: KycInfo;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const [banks, setBanks] =
+    useState<Bank[]>([]);
+
+  const [bankId, setBankId] =
+    useState("");
+
+  const [accountNumber, setAccountNumber] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const verified =
+    kyc.status.toLowerCase() ===
+      "verified" &&
+    Boolean(
+      kyc.legalName?.trim(),
+    );
+
+  useEffect(() => {
+    const loadBanks = async () => {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: bankError } =
+        await supabase
+          .from("p2p_banks")
+          .select(
+            "id,bank_name,is_active",
+          )
+          .eq("is_active", true)
+          .order("bank_name", {
+            ascending: true,
+          });
+
+      if (bankError) {
+        setError(
+          bankError.message,
+        );
+        setLoading(false);
+        return;
+      }
+
+      setBanks(
+        (data ?? []) as Bank[],
+      );
+
+      setLoading(false);
+    };
+
+    void loadBanks();
+  }, []);
+
+  const save = async () => {
+    if (!verified) {
+      setError(
+        "Verified KYC is required before adding a payment account.",
+      );
+      return;
+    }
+
+    if (!bankId) {
+      setError(
+        "Please select your bank.",
+      );
+      return;
+    }
+
+    if (!accountNumber.trim()) {
+      setError(
+        "Please enter your bank account number.",
+      );
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const { error: rpcError } =
+        await supabase.rpc(
+          "create_payment_account",
+          {
+            p_bank_id: bankId,
+            p_account_number:
+              accountNumber.trim(),
+          },
+        );
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      await onSaved();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save payment account.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="auth-overlay">
+      <div className="auth-card">
+        <h2>Add Bank Account</h2>
+
+        <p>
+          This account will be used for P2P
+          transactions only.
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gap: "10px",
+          }}
+        >
+          <label>Account holder name</label>
+
+          <input
+            value={
+              kyc.legalName ??
+              "KYC verification required"
+            }
+            disabled
+            style={{
+              minHeight: "45px",
+              padding: "10px 12px",
+              border:
+                "1px solid #d1d5db",
+              borderRadius:
+                "10px",
+              background:
+                "#f3f4f6",
+            }}
+          />
+
+          <small>
+            The account holder name comes from
+            your verified KYC legal name. You
+            cannot edit it here.
+          </small>
+
+          <label>Bank</label>
+
+          <select
+            value={bankId}
+            onChange={(event) =>
+              setBankId(
+                event.target.value,
+              )
+            }
+            disabled={loading}
+            style={{
+              minHeight: "45px",
+              padding: "10px 12px",
+              border:
+                "1px solid #d1d5db",
+              borderRadius:
+                "10px",
+              background:
+                "#ffffff",
+            }}
+          >
+            <option value="">
+              {loading
+                ? "Loading banks..."
+                : "Select your bank"}
+            </option>
+
+            {banks.map((bank) => (
+              <option
+                key={bank.id}
+                value={bank.id}
+              >
+                {bank.bank_name}
+              </option>
+            ))}
+          </select>
+
+          <label>
+            Bank account number
+          </label>
+
+          <input
+            value={accountNumber}
+            onChange={(event) =>
+              setAccountNumber(
+                event.target.value,
+              )
+            }
+            inputMode="numeric"
+            placeholder="Enter account number"
+          />
+
+          {error && (
+            <div
+              style={{
+                padding:
+                  "10px 12px",
+                borderRadius:
+                  "10px",
+                background:
+                  "#fef2f2",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                }}
+              >
+                {error}
+              </p>
+            </div>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onClose}
+              style={{
+                flex: 1,
+              }}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() =>
+                void save()
+              }
+              style={{
+                flex: 1,
+              }}
+              disabled={
+                saving ||
+                loading ||
+                !verified
+              }
+            >
+              {saving
+                ? "Saving..."
+                : "Save Account"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1871,36 +3638,54 @@ function HelpPage() {
     <div className="page-container">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Support</span>
+          <span className="eyebrow">
+            Support
+          </span>
 
           <h1>Help Center</h1>
 
           <p>
-            Choose a category to get help with your
-            account.
+            Choose a category to get help with
+            your account.
           </p>
         </div>
       </div>
 
       <section className="section-block">
         <div className="help-category-list">
-          {categories.map((category) => (
-            <button
-              type="button"
-              className="help-category"
-              key={category.title}
-            >
-              <span className="help-category-icon">?</span>
+          {categories.map(
+            (category) => (
+              <button
+                type="button"
+                className="help-category"
+                key={
+                  category.title
+                }
+              >
+                <span className="help-category-icon">
+                  ?
+                </span>
 
-              <span className="help-category-content">
-                <strong>{category.title}</strong>
+                <span className="help-category-content">
+                  <strong>
+                    {
+                      category.title
+                    }
+                  </strong>
 
-                <small>{category.description}</small>
-              </span>
+                  <small>
+                    {
+                      category.description
+                    }
+                  </small>
+                </span>
 
-              <span className="tile-arrow">›</span>
-            </button>
-          ))}
+                <span className="tile-arrow">
+                  ›
+                </span>
+              </button>
+            ),
+          )}
         </div>
       </section>
     </div>
@@ -1916,24 +3701,33 @@ function BottomNavigation({
 }) {
   return (
     <nav className="bottom-navigation">
-      {navigation.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          className={
-            activePage === item.id
-              ? "bottom-nav-item active"
-              : "bottom-nav-item"
-          }
-          onClick={() => onNavigate(item.id)}
-        >
-          <span className="bottom-nav-icon">
-            {item.icon}
-          </span>
+      {navigation.map(
+        (item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={
+              activePage ===
+              item.id
+                ? "bottom-nav-item active"
+                : "bottom-nav-item"
+            }
+            onClick={() =>
+              onNavigate(
+                item.id,
+              )
+            }
+          >
+            <span className="bottom-nav-icon">
+              {item.icon}
+            </span>
 
-          <span>{item.label}</span>
-        </button>
-      ))}
+            <span>
+              {item.label}
+            </span>
+          </button>
+        ),
+      )}
     </nav>
   );
 }
@@ -1944,29 +3738,40 @@ function LandingPage() {
       <div className="landing-content">
         <Brand />
 
-        <span className="eyebrow">Digital wallet</span>
+        <span className="eyebrow">
+          Digital wallet
+        </span>
 
-        <h1>Welcome to Malexa Wallet</h1>
+        <h1>
+          Welcome to Malexa Wallet
+        </h1>
 
         <p>
-          Manage your account, trade through P2P, and
-          keep your wallet activity in one place.
+          Manage your account, trade through
+          P2P, and keep your wallet activity in
+          one place.
         </p>
 
         <div className="landing-features">
           <div>
             <span>✓</span>
-            <strong>Secure account access</strong>
+            <strong>
+              Secure account access
+            </strong>
           </div>
 
           <div>
             <span>✓</span>
-            <strong>P2P trading</strong>
+            <strong>
+              P2P trading
+            </strong>
           </div>
 
           <div>
             <span>✓</span>
-            <strong>Account management</strong>
+            <strong>
+              Account management
+            </strong>
           </div>
         </div>
       </div>
@@ -1977,14 +3782,39 @@ function LandingPage() {
 function Brand() {
   return (
     <div className="brand">
-      <div className="brand-mark">M</div>
+      <div className="brand-mark">
+        M
+      </div>
 
       <div className="brand-text">
-        <strong>Malexa</strong>
-        <span>Wallet</span>
+        <strong>
+          Malexa
+        </strong>
+
+        <span>
+          Wallet
+        </span>
       </div>
     </div>
   );
+}
+
+function formatKycStatus(
+  status: string,
+): string {
+  const normalized =
+    status
+      .replaceAll("_", " ")
+      .trim();
+
+  if (!normalized) {
+    return "Not submitted";
+  }
+
+  return normalized
+    .charAt(0)
+    .toUpperCase() +
+    normalized.slice(1);
 }
 
 export default App;
