@@ -5,7 +5,10 @@ import "./App.css";
 
 type Page =
   | "dashboard"
+  | "deposit"
+  | "withdraw"
   | "p2p"
+  | "create-ad"
   | "orders"
   | "settings"
   | "help";
@@ -218,13 +221,13 @@ function DashboardPage({
       </div>
 
       <div className="quick-actions">
-        <button onClick={() => setPage("dashboard")}>
+        <button onClick={() => setPage("deposit")}>
           <span>↓</span>
           <strong>Deposit</strong>
           <small>USDT BEP-20</small>
         </button>
 
-        <button onClick={() => setPage("dashboard")}>
+        <button onClick={() => setPage("withdraw")}>
           <span>↑</span>
           <strong>Withdraw</strong>
           <small>Send USDT</small>
@@ -241,10 +244,12 @@ function DashboardPage({
 
       <div className="asset-card">
         <div className="asset-icon">₮</div>
+
         <div className="asset-info">
           <strong>USDT</strong>
           <span>Tether USD</span>
         </div>
+
         <div className="asset-balance">
           <strong>0.00 USDT</strong>
           <span>$0.00</span>
@@ -254,7 +259,11 @@ function DashboardPage({
   );
 }
 
-function DepositPage() {
+function DepositPage({
+  setPage,
+}: {
+  setPage: (page: Page) => void;
+}) {
   const [depositAddress, setDepositAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -339,6 +348,13 @@ function DepositPage() {
   return (
     <div className="page">
       <div className="page-header">
+        <button
+          className="secondary-button"
+          onClick={() => setPage("dashboard")}
+        >
+          ← Back
+        </button>
+
         <div>
           <div className="eyebrow">USDT Deposit</div>
           <h1>Deposit</h1>
@@ -424,11 +440,15 @@ function DepositPage() {
   );
 }
 
-function WithdrawPage() {
+function WithdrawPage({
+  setPage,
+}: {
+  setPage: (page: Page) => void;
+}) {
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
-  const fee = 0.4;
 
+  const fee = 0.4;
   const numericAmount = Number(amount) || 0;
   const totalDebited =
     numericAmount > 0 ? numericAmount + fee : 0;
@@ -436,6 +456,13 @@ function WithdrawPage() {
   return (
     <div className="page">
       <div className="page-header">
+        <button
+          className="secondary-button"
+          onClick={() => setPage("dashboard")}
+        >
+          ← Back
+        </button>
+
         <div>
           <div className="eyebrow">USDT Withdrawal</div>
           <h1>Withdraw</h1>
@@ -468,9 +495,7 @@ function WithdrawPage() {
         <div className="fee-preview">
           <div>
             <span>Withdrawal amount</span>
-            <strong>
-              ${numericAmount.toFixed(2)}
-            </strong>
+            <strong>${numericAmount.toFixed(2)}</strong>
           </div>
 
           <div>
@@ -480,9 +505,7 @@ function WithdrawPage() {
 
           <div>
             <span>Total debited</span>
-            <strong>
-              ${totalDebited.toFixed(2)}
-            </strong>
+            <strong>${totalDebited.toFixed(2)}</strong>
           </div>
         </div>
 
@@ -537,7 +560,7 @@ function P2PPage({
 
       <button
         className="primary-button"
-        onClick={() => setPage("settings")}
+        onClick={() => setPage("create-ad")}
       >
         Create Advertisement
       </button>
@@ -560,9 +583,7 @@ function P2PPage({
               <strong>
                 {ad.type === "buy" ? "Buy" : "Sell"} USDT
               </strong>
-              <span>
-                Amount: {ad.amount} USDT
-              </span>
+              <span>Amount: {ad.amount} USDT</span>
             </div>
 
             <div>
@@ -580,7 +601,11 @@ function P2PPage({
   );
 }
 
-function CreateAdvertisement() {
+function CreateAdvertisement({
+  setPage,
+}: {
+  setPage: (page: Page) => void;
+}) {
   const [type, setType] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
@@ -589,6 +614,13 @@ function CreateAdvertisement() {
   return (
     <div className="page">
       <div className="page-header">
+        <button
+          className="secondary-button"
+          onClick={() => setPage("p2p")}
+        >
+          ← Back
+        </button>
+
         <div>
           <div className="eyebrow">P2P</div>
           <h1>Create Advertisement</h1>
@@ -646,52 +678,6 @@ function CreateAdvertisement() {
 
         <button className="primary-button">
           Publish Advertisement
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TradeAdvertisement({
-  advertisement,
-}: {
-  advertisement: Advertisement;
-}) {
-  return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="eyebrow">P2P Trade</div>
-          <h1>Trade</h1>
-          <p>Review this P2P advertisement.</p>
-        </div>
-      </div>
-
-      <div className="form-card">
-        <div className="info-row">
-          <span>Type</span>
-          <strong>
-            {advertisement.type === "buy" ? "Buy" : "Sell"}
-          </strong>
-        </div>
-
-        <div className="info-row">
-          <span>Amount</span>
-          <strong>{advertisement.amount} USDT</strong>
-        </div>
-
-        <div className="info-row">
-          <span>Price</span>
-          <strong>${advertisement.price}</strong>
-        </div>
-
-        <div className="info-row">
-          <span>Payment</span>
-          <strong>{advertisement.paymentMethod}</strong>
-        </div>
-
-        <button className="primary-button">
-          Start Trade
         </button>
       </div>
     </div>
@@ -835,10 +821,12 @@ function SettingsPage({
 
       <div className="settings-card">
         <div className="settings-icon">K</div>
+
         <div>
           <strong>KYC Verification</strong>
           <span>Complete and manage your verification.</span>
         </div>
+
         <button className="secondary-button">
           Open
         </button>
@@ -846,12 +834,14 @@ function SettingsPage({
 
       <div className="settings-card">
         <div className="settings-icon">P</div>
+
         <div>
           <strong>Payment Account</strong>
           <span>
             Save payment details for P2P transactions.
           </span>
         </div>
+
         <button className="secondary-button">
           Manage
         </button>
@@ -859,6 +849,7 @@ function SettingsPage({
 
       <div className="settings-card">
         <div className="settings-icon">₮</div>
+
         <div>
           <strong>USDT Deposit Address</strong>
           <span>
@@ -939,9 +930,7 @@ function HelpPage() {
 
       <div className="help-card">
         <strong>Withdraw</strong>
-        <span>
-          Get help with withdrawals.
-        </span>
+        <span>Get help with withdrawals.</span>
       </div>
 
       <div className="help-card">
@@ -1041,6 +1030,12 @@ function SignedInApp({
           />
         );
 
+      case "deposit":
+        return <DepositPage setPage={setPage} />;
+
+      case "withdraw":
+        return <WithdrawPage setPage={setPage} />;
+
       case "p2p":
         return (
           <P2PPage
@@ -1050,6 +1045,9 @@ function SignedInApp({
             setPage={setPage}
           />
         );
+
+      case "create-ad":
+        return <CreateAdvertisement setPage={setPage} />;
 
       case "orders":
         return (
