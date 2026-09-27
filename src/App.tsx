@@ -510,12 +510,30 @@ function DepositPage() {
     setCopied(false);
 
     try {
+      const {
+        data: { session: currentSession },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!currentSession?.access_token) {
+        throw new Error(
+          "Your login session has expired. Please sign in again.",
+        );
+      }
+
       const { data, error: functionError } =
         await supabase.functions.invoke(
           "get-deposit-address",
           {
             body: {
               action: "get_deposit_address",
+            },
+            headers: {
+              Authorization: `Bearer ${currentSession.access_token}`,
             },
           },
         );
@@ -1508,12 +1526,30 @@ function SettingsPage() {
 
     try {
       const {
+        data: { session: currentSession },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!currentSession?.access_token) {
+        throw new Error(
+          "Your login session has expired. Please sign in again.",
+        );
+      }
+
+      const {
         data,
         error,
       } = await supabase.functions.invoke(
         "get-deposit-address",
         {
           body: {},
+          headers: {
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
         },
       );
 
