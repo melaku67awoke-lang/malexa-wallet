@@ -3324,7 +3324,6 @@ function SettingsPage({
 }
 
 function PaymentAccountModal({
-  session,
   kyc,
   onClose,
   onSaved,
